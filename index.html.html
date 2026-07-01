@@ -1,0 +1,2323 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sound in Production · DPU CA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',-apple-system,sans-serif}
+:root{
+  --sky:#9BC4F0;--sky2:#B8D5F5;--sky3:#D0E8FF;
+  --violet:#5B10E8;--violet2:#7B35F5;--violet3:#3D00C4;
+  --bg:#04020F;--card1:#080520;--card2:#0D0828;--card3:#110C2E;
+  --text:#C8DCFA;--text2:#A8C4EE;--muted:rgba(155,196,240,0.45);
+  --border:rgba(91,16,232,0.22);--border2:rgba(155,196,240,0.12);
+}
+html,body{background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── TRANSITIONS ── */
+.page{display:none;opacity:0;transform:translateY(12px);transition:opacity .35s ease,transform .35s ease}
+.page.active{display:block}
+.page.show{opacity:1;transform:translateY(0)}
+
+/* ── NOISE ── */
+.noise{position:absolute;inset:0;pointer-events:none;z-index:2;opacity:.4;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px}
+
+/* ── TOP NAV ── */
+.topnav{position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(4,2,15,.88);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);padding:0 24px;height:52px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px}
+.topnav-brand{display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0}
+.topnav-brand svg{width:22px;height:22px;opacity:.8}
+.brand-text{font-size:11px;font-weight:600;color:var(--sky);letter-spacing:2px}
+.brand-sub{font-size:9px;color:var(--muted);letter-spacing:1px}
+.topnav-links{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.nav-link{padding:6px 12px;border-radius:8px;font-size:11px;color:var(--muted);
+  cursor:pointer;transition:all .2s;letter-spacing:.3px;border:1px solid transparent;white-space:nowrap}
+.nav-link:hover{color:var(--sky);background:rgba(155,196,240,.06);border-color:var(--border2)}
+.nav-link.active-nav{color:var(--sky);background:rgba(91,16,232,.18);border-color:var(--border)}
+
+/* ── BREADCRUMB ── */
+.breadcrumb{display:flex;align-items:center;gap:6px;padding:72px 24px 0;font-size:11px;color:var(--muted)}
+.breadcrumb span{cursor:pointer;transition:color .2s}
+.breadcrumb span:hover{color:var(--sky)}
+.breadcrumb .sep{opacity:.3;cursor:default}
+.breadcrumb .current{color:var(--sky2);cursor:default}
+
+/* ── GLOW BLOBS ── */
+.blob{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none}
+
+/* ══════════════════════════════════
+   HOME PAGE
+══════════════════════════════════ */
+#page-home{min-height:100vh}
+.home-hero{position:relative;height:100vh;padding:14px;overflow:hidden}
+.home-hero-inner{position:relative;height:100%;border-radius:22px;overflow:hidden;background:var(--bg)}
+.hero-bg-grad{position:absolute;inset:0;
+  background:radial-gradient(ellipse at 12% 80%,rgba(91,16,232,.6) 0%,transparent 55%),
+  radial-gradient(ellipse at 88% 15%,rgba(155,196,240,.15) 0%,transparent 50%),
+  linear-gradient(160deg,#04020F 0%,#090425 50%,#04020F 100%)}
+.scanline{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.scanline::before{content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(155,196,240,.01) 2px,rgba(155,196,240,.01) 4px);
+  animation:scan 12s linear infinite}
+@keyframes scan{to{transform:translateY(40px)}}
+/* ── HERO WAVE CANVASES ── */
+#heroWave{position:absolute;bottom:0;left:0;right:0;height:55%;pointer-events:none;z-index:1;opacity:.18}
+
+/* ── 5-PANEL WAVE OVERLAY ── */
+#waveOverlay{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  pointer-events:none;z-index:2;
+  background:
+    radial-gradient(ellipse at 78% 78%, rgba(4,2,15,.88) 0%, rgba(4,2,15,.4) 55%, transparent 80%),
+    linear-gradient(180deg,rgba(4,2,15,.08) 0%,rgba(4,2,15,.18) 50%,rgba(4,2,15,.6) 100%);
+}
+.wo-row{display:flex;flex:1;min-height:0}
+.wo-top{flex:1.35}
+.wo-bot{flex:1;border-top:1px solid rgba(155,196,240,.06)}
+.wo-cell{flex:1;position:relative;border-right:1px solid rgba(155,196,240,.06);overflow:hidden}
+.wo-cell:last-child{border-right:none}
+.wo-cell canvas{position:absolute;inset:0;width:100%;height:100%}
+.wo-lbl{position:absolute;top:10px;left:14px;font-size:8px;letter-spacing:2px;
+  text-transform:uppercase;color:rgba(155,196,240,.32);z-index:4;font-family:'Inter',sans-serif}
+
+
+/* navbar inside hero */
+.hero-nav{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:12;
+  background:rgba(4,2,15,.85);backdrop-filter:blur(12px);
+  border:1px solid rgba(91,16,232,.2);border-top:none;
+  border-radius:0 0 16px 16px;padding:8px 20px;
+  display:flex;gap:20px;align-items:center;white-space:nowrap}
+.hero-nav-brand{font-size:11px;font-weight:700;color:var(--sky);letter-spacing:2px;
+  padding-right:14px;border-right:1px solid rgba(91,16,232,.3);margin-right:4px}
+.hero-nav a{font-size:11px;color:rgba(155,196,240,.6);cursor:pointer;
+  text-decoration:none;letter-spacing:.4px;transition:color .2s}
+.hero-nav a:hover{color:var(--sky)}
+
+/* hero content */
+.hero-cnt{position:absolute;bottom:0;left:0;right:0;padding:28px 30px;z-index:10;
+  display:grid;grid-template-columns:1fr auto;align-items:flex-end;gap:24px}
+.hero-title{font-size:clamp(52px,15vw,200px);font-weight:500;line-height:.85;
+  letter-spacing:-.05em;
+  background:linear-gradient(135deg,var(--sky2) 0%,var(--sky) 45%,var(--violet2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-title .word{display:inline-block;transform:translateY(100%);opacity:0;
+  animation:pullup .9s cubic-bezier(.16,1,.3,1) forwards}
+.w1{animation-delay:.08s}.w2{animation-delay:.2s}
+.hero-sup{font-size:.24em;vertical-align:super}
+.hero-right{max-width:240px;padding-bottom:6px;display:flex;flex-direction:column;gap:14px}
+.hero-desc{font-size:12.5px;color:var(--muted);line-height:1.65;font-weight:300;
+  opacity:0;transform:translateY(20px);animation:fadeup .9s cubic-bezier(.16,1,.3,1) .5s forwards}
+.hero-cta{display:inline-flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,var(--sky) 0%,var(--violet2) 100%);
+  border-radius:999px;padding:8px 8px 8px 16px;cursor:pointer;border:none;
+  font-weight:600;font-size:12px;color:#fff;font-family:'Inter',sans-serif;
+  opacity:0;transform:translateY(20px);animation:fadeup .9s cubic-bezier(.16,1,.3,1) .7s forwards;
+  transition:gap .2s,box-shadow .3s}
+.hero-cta:hover{gap:16px;box-shadow:0 0 32px rgba(91,16,232,.5)}
+.cta-circle{width:34px;height:34px;background:rgba(4,2,15,.7);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;transition:transform .2s}
+.hero-cta:hover .cta-circle{transform:scale(1.12)}
+
+/* HOME: section cards */
+.home-sections{padding:64px 24px 80px;max-width:1160px;margin:0 auto}
+.home-sec-title{font-size:11px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:28px;padding-bottom:12px;
+  border-bottom:1px solid var(--border2)}
+.sec-grid{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:540px){.sec-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:900px){.sec-grid{grid-template-columns:repeat(4,1fr)}}
+.sec-card{background:var(--card1);border:1px solid var(--border);border-radius:16px;
+  padding:22px 20px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.sec-card::before{content:'';position:absolute;top:-40px;right:-40px;
+  width:120px;height:120px;border-radius:50%;opacity:0;transition:opacity .3s;
+  background:radial-gradient(circle,rgba(91,16,232,.25) 0%,transparent 70%)}
+.sec-card:hover{border-color:rgba(91,16,232,.5);transform:translateY(-2px);
+  box-shadow:0 8px 32px rgba(91,16,232,.15)}
+.sec-card:hover::before{opacity:1}
+.sec-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;margin-bottom:14px}
+.sec-card-title{font-size:15px;font-weight:600;color:var(--sky2);margin-bottom:6px}
+.sec-card-desc{font-size:12px;color:var(--muted);line-height:1.6}
+.sec-card-count{position:absolute;bottom:16px;right:16px;font-size:10px;
+  letter-spacing:1px;color:rgba(155,196,240,.3);text-transform:uppercase}
+.sec-card-arrow{position:absolute;bottom:18px;right:18px;opacity:.4;transition:opacity .2s,transform .2s}
+.sec-card:hover .sec-card-arrow{opacity:.9;transform:translate(2px,-2px)}
+
+@keyframes pullup{to{transform:translateY(0);opacity:1}}
+@keyframes fadeup{to{transform:translateY(0);opacity:1}}
+
+/* ══════════════════════════════════
+   INNER PAGES (shared)
+══════════════════════════════════ */
+.inner-page{padding:80px 24px 80px;max-width:1100px;margin:0 auto}
+.page-header{margin-bottom:40px}
+.page-eyebrow{font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--sky);opacity:.7;margin-bottom:10px}
+.page-h1{font-size:clamp(30px,5vw,60px);font-weight:500;line-height:.95;
+  background:linear-gradient(135deg,var(--sky2) 0%,var(--sky) 45%,var(--violet2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:14px}
+.page-h1 em{font-family:'Instrument Serif',serif;font-style:italic}
+.page-desc{font-size:14px;color:var(--muted);line-height:1.7;max-width:560px;font-weight:300}
+
+/* sub-topic grid */
+.topic-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:40px}
+@media(min-width:540px){.topic-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:800px){.topic-grid{grid-template-columns:repeat(3,1fr)}}
+.topic-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;
+  padding:20px;cursor:pointer;transition:all .25s;position:relative}
+.topic-card:hover{border-color:rgba(91,16,232,.5);transform:translateY(-2px);
+  box-shadow:0 6px 24px rgba(91,16,232,.12)}
+.topic-num{font-size:9px;letter-spacing:2px;color:rgba(155,196,240,.3);
+  text-transform:uppercase;margin-bottom:10px}
+.topic-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;margin-bottom:12px}
+.topic-title{font-size:14px;font-weight:600;color:var(--sky2);margin-bottom:6px}
+.topic-desc{font-size:11.5px;color:var(--muted);line-height:1.55}
+.topic-arrow{position:absolute;top:18px;right:18px;opacity:.35;transition:all .2s}
+.topic-card:hover .topic-arrow{opacity:.8;transform:translate(2px,-2px)}
+
+/* content body */
+.content-body{background:var(--card1);border:1px solid var(--border);border-radius:18px;padding:36px}
+.content-section{margin-bottom:32px;padding-bottom:32px;border-bottom:1px solid var(--border2)}
+.content-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.content-section h3{font-size:18px;font-weight:600;color:var(--sky2);margin-bottom:12px}
+.content-section p{font-size:13.5px;color:var(--text2);line-height:1.8;font-weight:300;margin-bottom:10px}
+.content-section p:last-child{margin-bottom:0}
+
+/* info table */
+.info-table{width:100%;border-collapse:collapse;font-size:12.5px;margin:16px 0}
+.info-table th{background:rgba(91,16,232,.25);color:var(--sky2);
+  padding:10px 14px;text-align:left;font-weight:600;letter-spacing:.3px}
+.info-table th:first-child{border-radius:8px 0 0 0}
+.info-table th:last-child{border-radius:0 8px 0 0}
+.info-table td{padding:10px 14px;border-bottom:1px solid var(--border2);color:var(--text2)}
+.info-table tr:hover td{background:rgba(155,196,240,.04)}
+.info-table .highlight td{background:rgba(91,16,232,.1);color:var(--sky)}
+
+/* tag pills */
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.tag{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;
+  font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase}
+.tag-sky{background:rgba(155,196,240,.12);color:var(--sky);border:1px solid rgba(155,196,240,.2)}
+.tag-violet{background:rgba(91,16,232,.15);color:var(--violet2);border:1px solid rgba(91,16,232,.25)}
+.tag-green{background:rgba(52,211,153,.1);color:#34D399;border:1px solid rgba(52,211,153,.2)}
+
+/* checklist */
+.checklist{display:flex;flex-direction:column;gap:10px;margin:14px 0}
+.check-item{display:flex;align-items:flex-start;gap:10px}
+.check-item svg{flex-shrink:0;width:14px;height:14px;color:var(--sky);margin-top:2px}
+.check-item span{font-size:13px;color:var(--text2);line-height:1.5}
+.check-item .check-note{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* gear card */
+.gear-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;
+  padding:20px;margin-bottom:10px}
+.gear-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.gear-name{font-size:16px;font-weight:600;color:var(--sky2)}
+.gear-badge{font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  padding:3px 9px;border-radius:12px;font-weight:600;flex-shrink:0;margin-top:3px}
+.gear-specs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.spec{background:rgba(155,196,240,.08);border:1px solid rgba(155,196,240,.15);
+  padding:3px 9px;border-radius:14px;font-size:11px;color:var(--sky);font-weight:500}
+.gear-note{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* tier row */
+.tier-row{border-radius:10px;overflow:hidden;margin-bottom:8px}
+.tier-head{display:flex;align-items:center;gap:10px;padding:12px 16px;font-weight:700;font-size:14px;color:#fff}
+.tier-emoji{font-size:20px}
+.tier-label{flex:1}
+.tier-items-wrap{background:rgba(4,2,15,.5);border:1px solid rgba(91,16,232,.15);
+  border-top:none;padding:12px 16px;display:flex;flex-wrap:wrap;gap:7px}
+.tier-chip{background:rgba(155,196,240,.06);border:1px solid rgba(155,196,240,.12);
+  padding:5px 11px;border-radius:6px;font-size:11.5px;color:var(--text2);font-weight:400}
+
+/* cable row */
+.cable-group-title{font-size:12px;font-weight:700;color:var(--sky);letter-spacing:.5px;
+  margin:20px 0 10px;padding-left:10px;border-left:2px solid var(--violet2)}
+.cable-row{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:var(--card2);border:1px solid var(--border2);border-radius:8px;margin-bottom:6px}
+.cable-name{font-size:13px;font-weight:600;color:var(--sky2);min-width:90px}
+.cable-desc{font-size:12px;color:var(--muted);flex:1;line-height:1.4}
+.cable-badge{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:2px 8px;border-radius:8px;flex-shrink:0}
+
+/* back button */
+.back-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;
+  border-radius:10px;background:transparent;border:1px solid var(--border);
+  color:var(--muted);font-size:12px;cursor:pointer;transition:all .2s;
+  margin-bottom:20px;font-family:'Inter',sans-serif}
+.back-btn:hover{border-color:var(--sky);color:var(--sky);background:rgba(155,196,240,.05)}
+.back-btn svg{width:14px;height:14px}
+
+/* ── FOOTER ── */
+.site-footer{background:var(--bg);border-top:1px solid var(--border);
+  padding:22px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.ft-left{display:flex;align-items:center;gap:10px}
+.ft-name{font-size:12px;font-weight:600;color:var(--sky);opacity:.8;letter-spacing:.8px}
+.ft-sub{font-size:10px;color:rgba(155,196,240,.28);letter-spacing:.4px}
+.ft-right{font-size:10px;color:rgba(155,196,240,.2);letter-spacing:1px;text-transform:uppercase}
+
+/* ── scroll-reveal ── */
+.sr{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+.sr.vis{opacity:1;transform:none}
+
+/* ══════════════════════════════════
+   PAGE TRANSITION WAVE OVERLAY
+══════════════════════════════════ */
+#waveTransition{
+  position:fixed;inset:0;z-index:9999;
+  pointer-events:none;
+  background:transparent;
+  opacity:0;
+}
+#waveTransition.wt-active{pointer-events:all}
+#wtCanvas{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+}
+/* dark bg sweeps behind bars */
+#waveTransition::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(160deg,#04020F 0%,#07032A 50%,#04020F 100%);
+  opacity:0;
+  transition:opacity .18s ease;
+}
+#waveTransition.wt-active::before{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ FIXED TOP NAV (hidden on home hero) ═══════════ -->
+<nav class="topnav" id="topnav" style="display:none">
+  <div class="topnav-brand" onclick="nav('home')">
+    <svg viewBox="0 0 80 80" fill="none">
+      <g opacity=".8">
+        <ellipse cx="40" cy="12" rx="5.5" ry="8.5" fill="rgba(155,196,240,.8)" transform="rotate(0 40 40) translate(0,-28)"/>
+        <ellipse cx="40" cy="12" rx="5.5" ry="8.5" fill="rgba(155,196,240,.8)" transform="rotate(45 40 40) translate(0,-28)"/>
+        <ellipse cx="40" cy="12" rx="5.5" ry="8.5" fill="rgba(155,196,240,.8)" transform="rotate(90 40 40) translate(0,-28)"/>
+        <ellipse cx="40" cy="12" rx="5.5" ry="8.5" fill="rgba(155,196,240,.8)" transform="rotate(135 40 40) translate(0,-28)"/>
+        <ellipse cx="40" cy="12" rx="5.5" ry="8.5" fill="rgba(155,196,240,.8)" transform="rotate(180 40 40) translate(0,-28)"/>
+        <ellipse cx="40" cy="12" rx="5.5" ry="8.5" fill="rgba(155,196,240,.8)" transform="rotate(225 40 40) translate(0,-28)"/>
+        <ellipse cx="40" cy="12" rx="5.5" ry="8.5" fill="rgba(155,196,240,.8)" transform="rotate(270 40 40) translate(0,-28)"/>
+        <ellipse cx="40" cy="12" rx="5.5" ry="8.5" fill="rgba(155,196,240,.8)" transform="rotate(315 40 40) translate(0,-28)"/>
+      </g>
+    </svg>
+    <div>
+      <div class="brand-text">SOUND</div>
+      <div class="brand-sub">CA · DPU</div>
+    </div>
+  </div>
+  <div class="topnav-links">
+    <span class="nav-link" data-nav="basics" onclick="nav('basics')">พื้นฐานเสียง</span>
+    <span class="nav-link" data-nav="process" onclick="nav('process')">กระบวนการ</span>
+    <span class="nav-link" data-nav="cables" onclick="nav('cables')">สายสัญญาณ</span>
+    <span class="nav-link" data-nav="gear" onclick="nav('gear')">อุปกรณ์</span>
+    <span class="nav-link" data-nav="tierlist" onclick="nav('tierlist')">Tier List</span>
+    <span class="nav-link" data-nav="diagram" onclick="nav('diagram')" style="color:var(--sky);border:1px solid rgba(155,196,240,.25);border-radius:6px;padding:4px 10px">⬡ Diagram</span>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════
+  PAGE: HOME
+═══════════════════════════════════ -->
+<div id="page-home" class="page">
+  <section class="home-hero">
+    <div class="home-hero-inner">
+      <div class="hero-bg-grad"></div>
+      <div class="scanline"></div>
+      <canvas id="heroWave"></canvas>
+      <!-- 5-panel wave overlay grid — absolute, covers full hero -->
+      <div id="waveOverlay">
+        <!-- top row: spectrum bars (left) + oscilloscope (right) -->
+        <div class="wo-row wo-top">
+          <div class="wo-cell">
+            <span class="wo-lbl">SPECTRUM BARS</span>
+            <canvas id="wv1"></canvas>
+          </div>
+          <div class="wo-cell">
+            <span class="wo-lbl">OSCILLOSCOPE</span>
+            <canvas id="wv2"></canvas>
+          </div>
+        </div>
+        <!-- bottom row: dot matrix + sine layers + gradient fill -->
+        <div class="wo-row wo-bot">
+          <div class="wo-cell">
+            <span class="wo-lbl">DOT MATRIX</span>
+            <canvas id="wv3"></canvas>
+          </div>
+          <div class="wo-cell">
+            <span class="wo-lbl">SINE LAYERS</span>
+            <canvas id="wv4"></canvas>
+          </div>
+          <div class="wo-cell">
+            <span class="wo-lbl">GRADIENT FILL</span>
+            <canvas id="wv5"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="noise"></div>
+      <div class="blob" style="width:380px;height:380px;background:rgba(91,16,232,.25);bottom:-70px;left:-70px;z-index:0"></div>
+      <div class="blob" style="width:280px;height:280px;background:rgba(155,196,240,.08);top:-50px;right:-30px;z-index:0"></div>
+
+      <!-- hero navbar -->
+      <nav class="hero-nav">
+        <span class="hero-nav-brand">SOUND</span>
+        <a onclick="nav('basics')">พื้นฐาน</a>
+        <a onclick="nav('process')">กระบวนการ</a>
+        <a onclick="nav('cables')">สายสัญญาณ</a>
+        <a onclick="nav('gear')">อุปกรณ์</a>
+        <a onclick="nav('tierlist')">Tier List</a>
+        <a onclick="nav('diagram')" style="color:var(--sky);font-weight:600">⬡ Diagram</a>
+      </nav>
+
+      <!-- DPU badge -->
+      <div style="position:absolute;top:18px;left:22px;z-index:12;display:flex;align-items:center;gap:8px;opacity:.7">
+        <svg width="20" height="20" viewBox="0 0 80 80" fill="none">
+          <g opacity=".8">
+            <ellipse cx="40" cy="12" rx="5.5" ry="8.5" fill="rgba(155,196,240,.8)" transform="rotate(0 40 40) translate(0,-28)"/>
+            <ellipse cx="40" cy="12" rx="5.5" ry="8.5" fill="rgba(155,196,240,.8)" transform="rotate(90 40 40) translate(0,-28)"/>
+            <ellipse cx="40" cy="12" rx="5.5" ry="8.5" fill="rgba(155,196,240,.8)" transform="rotate(180 40 40) translate(0,-28)"/>
+            <ellipse cx="40" cy="12" rx="5.5" ry="8.5" fill="rgba(155,196,240,.8)" transform="rotate(270 40 40) translate(0,-28)"/>
+          </g>
+        </svg>
+        <span style="font-size:9px;letter-spacing:2px;color:rgba(155,196,240,.5);text-transform:uppercase">CA · DPU</span>
+      </div>
+
+      <div class="hero-cnt">
+        <div>
+          <h1 class="hero-title">
+            <span class="word w1">Sound</span><br>
+            <span class="word w2">In Production<span class="hero-sup">★</span></span>
+          </h1>
+        </div>
+        <div class="hero-right">
+          <p class="hero-desc">เสียงในกองถ่ายภาพยนตร์ — จาก Digital Audio พื้นฐาน สู่กระบวนการในกอง อุปกรณ์มืออาชีพ และ Tier List สถานการณ์จริง</p>
+          <button class="hero-cta" onclick="scrollToSections()">
+            สำรวจบทเรียน
+            <span class="cta-circle">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section cards -->
+  <div class="home-sections" id="homeSections">
+    <p class="home-sec-title">หัวข้อการเรียน</p>
+    <div class="sec-grid">
+      <div class="sec-card sr" onclick="nav('basics')">
+        <div class="sec-icon" style="background:rgba(155,196,240,.1)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <div class="sec-card-title">พื้นฐานดิจิตอลเสียง</div>
+        <div class="sec-card-desc">Sample Rate, Bit Depth, ระบบเสียงดิจิตอล และขนาดไฟล์</div>
+        <div class="topic-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+      </div>
+      <div class="sec-card sr" style="transition-delay:.1s" onclick="nav('process')">
+        <div class="sec-icon" style="background:rgba(91,16,232,.15)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--violet2)" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div class="sec-card-title">กระบวนการในกองถ่าย</div>
+        <div class="sec-card-desc">เตรียมตัว, ระหว่างถ่าย, ภายในอาคาร, ภายนอกสถานที่</div>
+        <div class="topic-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+      </div>
+      <div class="sec-card sr" style="transition-delay:.2s" onclick="nav('cables')">
+        <div class="sec-icon" style="background:rgba(155,196,240,.08)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sky2)" stroke-width="1.5"><path d="M8 6h8M8 12h4m-4 6h8"/><rect x="2" y="3" width="4" height="18" rx="1"/><rect x="18" y="3" width="4" height="18" rx="1"/></svg>
+        </div>
+        <div class="sec-card-title">สายสัญญาณ & Connector</div>
+        <div class="sec-card-desc">XLR, TRS, MIDI, USB, Optical, Balanced vs Unbalanced</div>
+        <div class="topic-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+      </div>
+      <div class="sec-card sr" style="transition-delay:.3s" onclick="nav('gear')">
+        <div class="sec-icon" style="background:rgba(52,211,153,.08)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+        </div>
+        <div class="sec-card-title">อุปกรณ์บันทึกเสียง</div>
+        <div class="sec-card-desc">Field Recorder, Wireless Mic, Boom Setup, Lavalier</div>
+        <div class="topic-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+      </div>
+      <div class="sec-card sr" style="transition-delay:.4s;grid-column:1/-1" onclick="nav('tierlist')">
+        <div class="sec-icon" style="background:rgba(248,113,113,.1)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="1.5"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
+        </div>
+        <div class="sec-card-title">Tier List เสียงในกองถ่าย</div>
+        <div class="sec-card-desc">จัดอันดับสถานการณ์จริง ตั้งแต่ "พระเจ้า" ถึง "ฉิบหาย" — เรื่องจริงในชีวิต Sound Department</div>
+        <div class="topic-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+      </div>
+      <div class="sec-card sr" style="transition-delay:.5s;border-color:rgba(155,196,240,.3)" onclick="nav('diagram')">
+        <div class="sec-icon" style="background:rgba(155,196,240,.12)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="1.5"><rect x="3" y="3" width="4" height="4" rx="1"/><rect x="17" y="3" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/><rect x="3" y="17" width="4" height="4" rx="1"/><rect x="17" y="17" width="4" height="4" rx="1"/><line x1="7" y1="5" x2="10" y2="5"/><line x1="14" y1="5" x2="17" y2="5"/><line x1="12" y1="7" x2="12" y2="10"/><line x1="5" y1="14" x2="12" y2="14"/><line x1="19" y1="14" x2="12" y2="14"/><line x1="5" y1="14" x2="5" y2="17"/><line x1="19" y1="14" x2="19" y2="17"/></svg>
+        </div>
+        <div class="sec-card-title" style="background:linear-gradient(90deg,var(--sky2),var(--violet2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Sound System Diagram</div>
+        <div class="sec-card-desc">ออกแบบระบบเสียงแบบ Interactive — ลากอุปกรณ์ เชื่อมต่อสาย ตรวจสอบความเข้ากันได้แบบ Real-time</div>
+        <div class="topic-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="ft-left">
+      <div>
+        <div class="ft-name">CA · Faculty of Communication Arts · DPU</div>
+        <div class="ft-sub">Sound in Production — เสียงในกองถ่ายภาพยนตร์</div>
+      </div>
+    </div>
+    <div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════
+  PAGE: BASICS
+═══════════════════════════════════ -->
+<div id="page-basics" class="page">
+  <div class="breadcrumb">
+    <span onclick="nav('home')">หน้าแรก</span>
+    <span class="sep">/</span>
+    <span class="current">พื้นฐานดิจิตอลเสียง</span>
+  </div>
+  <div class="inner-page">
+    <div class="page-header">
+      <p class="page-eyebrow">หัวข้อที่ 1</p>
+      <h1 class="page-h1">พื้นฐาน<em>ดิจิตอล</em>เสียง</h1>
+      <p class="page-desc">ระบบเสียงดิจิตอล, Sample Rate, Bit Depth และการคำนวณขนาดไฟล์ — รากฐานก่อนเข้ากองถ่าย</p>
+    </div>
+    <div class="topic-grid">
+      <div class="topic-card sr" onclick="nav('basics-digital')">
+        <div class="topic-num">01</div>
+        <div class="topic-icon" style="background:rgba(155,196,240,.1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="topic-title">ระบบเสียงดิจิตอล</div>
+        <div class="topic-desc">Analog vs Digital, ADC, Sampling, Quantization</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+      <div class="topic-card sr" style="transition-delay:.1s" onclick="nav('basics-samplerate')">
+        <div class="topic-num">02</div>
+        <div class="topic-icon" style="background:rgba(91,16,232,.15)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--violet2)" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/></svg>
+        </div>
+        <div class="topic-title">Sample Rate</div>
+        <div class="topic-desc">44.1 / 48 / 96 / 192 kHz — เลือกอย่างไรให้เหมาะกับงาน</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+      <div class="topic-card sr" style="transition-delay:.2s" onclick="nav('basics-bitdepth')">
+        <div class="topic-num">03</div>
+        <div class="topic-icon" style="background:rgba(155,196,240,.08)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sky2)" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+        </div>
+        <div class="topic-title">Bit Depth</div>
+        <div class="topic-desc">16-bit / 24-bit / 32-bit Float — ความละเอียดของแอมพลิจูด</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+      <div class="topic-card sr" style="transition-delay:.3s" onclick="nav('basics-filesize')">
+        <div class="topic-num">04</div>
+        <div class="topic-icon" style="background:rgba(52,211,153,.08)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="topic-title">ขนาดไฟล์ & File Format</div>
+        <div class="topic-desc">WAV, BWF, MP3 — ตารางเปรียบเทียบขนาด 24 นาที</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div><div class="ft-sub">Sound in Production</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Digital Audio -->
+<div id="page-basics-digital" class="page">
+  <div class="breadcrumb">
+    <span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span>
+    <span onclick="nav('basics')">พื้นฐานเสียง</span><span class="sep">/</span>
+    <span class="current">ระบบเสียงดิจิตอล</span>
+  </div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('basics')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header">
+      <p class="page-eyebrow">01 · พื้นฐาน</p>
+      <h1 class="page-h1">ระบบเสียง<em>ดิจิตอล</em></h1>
+    </div>
+    <div class="content-body">
+      <div class="content-section">
+        <h3>Analog vs Digital Audio</h3>
+        <div class="tags"><span class="tag tag-sky">ADC</span><span class="tag tag-violet">Sampling</span><span class="tag tag-sky">Quantization</span></div>
+        <p>เสียงในธรรมชาติเป็นคลื่น Analog (ต่อเนื่อง) เมื่อบันทึกผ่านไมโครโฟน จะถูกแปลงเป็นข้อมูลดิจิตอลโดย ADC (Analog-to-Digital Converter) ผ่าน 2 ขั้นตอน</p>
+        <div class="checklist">
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><span><strong>Sampling (สุ่มตัวอย่าง)</strong> — วัดค่าคลื่นตามแนวเวลา กี่ครั้ง/วินาที = Sample Rate</span></div></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><span><strong>Quantization (แปลงเป็นตัวเลข)</strong> — วัดระดับแอมพลิจูด ความละเอียด = Bit Depth</span></div></div>
+        </div>
+        <p style="margin-top:12px">ยิ่ง Sample Rate สูงและ Bit Depth มาก คุณภาพยิ่งใกล้เคียง Analog ต้นฉบับ แต่ขนาดไฟล์จะใหญ่ขึ้นตามสัดส่วน</p>
+      </div>
+      <div class="content-section">
+        <h3>ทำไม Sample = แนวตั้ง, Bit Depth = แนวนอน?</h3>
+        <p>ลองนึกภาพกริด: <strong>Sample Rate</strong> คือจำนวนแถวแนวตั้ง (กี่จุดต่อวินาที) ส่วน <strong>Bit Depth</strong> คือจำนวนช่องแนวนอน (กี่ระดับความดัง) — ยิ่งกริดละเอียด รูปคลื่นที่ได้ยิ่งเหมือน Analog ต้นฉบับ</p>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div><div class="ft-sub">Sound in Production</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Sample Rate -->
+<div id="page-basics-samplerate" class="page">
+  <div class="breadcrumb">
+    <span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span>
+    <span onclick="nav('basics')">พื้นฐานเสียง</span><span class="sep">/</span>
+    <span class="current">Sample Rate</span>
+  </div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('basics')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header">
+      <p class="page-eyebrow">02 · พื้นฐาน</p>
+      <h1 class="page-h1"><em>Sample</em> Rate</h1>
+      <p class="page-desc">ความถี่การสุ่มตัวอย่างเสียงต่อวินาที — ตัวเลขนี้กำหนดความสมบูรณ์ของคลื่นเสียงที่บันทึกได้</p>
+    </div>
+    <div class="content-body">
+      <div class="content-section">
+        <h3>Sample Rate ที่นิยมใช้</h3>
+        <table class="info-table">
+          <tr><th>Sample Rate</th><th>ความถี่</th><th>ใช้งาน</th></tr>
+          <tr><td><strong>44.1 kHz</strong></td><td>44,100 ครั้ง/วินาที</td><td>มาตรฐาน CD Audio, ฟังเพลงทั่วไป</td></tr>
+          <tr class="highlight"><td><strong>48 kHz ✅</strong></td><td>48,000 ครั้ง/วินาที</td><td>มาตรฐานวิดีโอ ภาพยนตร์ บรอดแคสต์ — แนะนำสำหรับงาน Production</td></tr>
+          <tr><td><strong>96 kHz</strong></td><td>96,000 ครั้ง/วินาที</td><td>Professional Recording, Sound Design</td></tr>
+          <tr><td><strong>192 kHz</strong></td><td>192,000 ครั้ง/วินาที</td><td>งานระดับ Mastering, ให้รายละเอียดสูงสุดเมื่อดัดแปลง</td></tr>
+        </table>
+      </div>
+      <div class="content-section">
+        <h3>ทำไมต้อง 48 kHz สำหรับภาพยนตร์?</h3>
+        <p>มาตรฐาน SMPTE และ EBU กำหนดให้งาน Video Production ใช้ 48 kHz เพื่อให้ไฟล์เสียงซิงก์กับ Frame Rate ของวิดีโอได้อย่างแม่นยำ — กล้อง, NLE Software และ Audio Workstation ทุกตัวรองรับ 48 kHz เป็น Default</p>
+        <p>เมื่อนำ Sample Rate 44.1 kHz ไปรวมกับไทม์โค้ดวิดีโอ จะเกิด Pull-up/Pull-down ที่อาจทำให้เสียงเหลื่อมกับภาพในระยะยาว</p>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div><div class="ft-sub">Sound in Production</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Bit Depth -->
+<div id="page-basics-bitdepth" class="page">
+  <div class="breadcrumb">
+    <span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span>
+    <span onclick="nav('basics')">พื้นฐานเสียง</span><span class="sep">/</span>
+    <span class="current">Bit Depth</span>
+  </div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('basics')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header">
+      <p class="page-eyebrow">03 · พื้นฐาน</p>
+      <h1 class="page-h1"><em>Bit</em> Depth</h1>
+      <p class="page-desc">ความละเอียดของข้อมูลแอมพลิจูด — กี่ระดับที่ใช้วัดความดังของเสียง ณ แต่ละจุด</p>
+    </div>
+    <div class="content-body">
+      <div class="content-section">
+        <h3>Bit Depth ที่นิยมใช้</h3>
+        <table class="info-table">
+          <tr><th>Bit Depth</th><th>Dynamic Range</th><th>ใช้งาน</th></tr>
+          <tr><td><strong>16-bit</strong></td><td>~96 dB</td><td>มาตรฐาน CD Audio</td></tr>
+          <tr class="highlight"><td><strong>24-bit ✅</strong></td><td>~144 dB</td><td>มาตรฐานการบันทึกเสียงและทำเพลง/ภาพยนตร์ปัจจุบัน</td></tr>
+          <tr><td><strong>32-bit Float</strong></td><td>ไม่จำกัด</td><td>เทคโนโลยีใหม่ในเครื่องอัดภาคสนาม แทบเป็นไปไม่ได้ที่เสียงจะ Clip</td></tr>
+        </table>
+      </div>
+      <div class="content-section">
+        <h3>ทำไม 32-bit Float ถึงพิเศษ?</h3>
+        <p>32-bit Float ใช้ระบบทศนิยมลอยตัว (Floating Point) แทนที่จะเป็นจำนวนเต็ม (Integer) ทำให้ Dynamic Range แทบไม่จำกัด — แม้เสียงดังมากจนเกิน 0 dBFS ใน Monitor ข้อมูลที่บันทึกไว้ยังคงสมบูรณ์ สามารถนำไป Adjust ใน Post-Production ได้</p>
+        <p>เครื่องที่รองรับ 32-bit Float เช่น Zoom F6, RØDE Wireless GO II, Saramonic Blink 500 Pro, DJI Mic3</p>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div><div class="ft-sub">Sound in Production</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: File Size -->
+<div id="page-basics-filesize" class="page">
+  <div class="breadcrumb">
+    <span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span>
+    <span onclick="nav('basics')">พื้นฐานเสียง</span><span class="sep">/</span>
+    <span class="current">ขนาดไฟล์</span>
+  </div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('basics')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header">
+      <p class="page-eyebrow">04 · พื้นฐาน</p>
+      <h1 class="page-h1">ขนาดไฟล์ &amp; <em>Format</em></h1>
+    </div>
+    <div class="content-body">
+      <div class="content-section">
+        <h3>ตารางขนาดไฟล์ (24 นาที, Mono 1 ช่อง)</h3>
+        <table class="info-table">
+          <tr><th>Bit Depth</th><th>Sample Rate</th><th>ขนาดไฟล์ 24 นาที</th></tr>
+          <tr><td>4-bit</td><td>44.1 kHz</td><td>31.8 MB</td></tr>
+          <tr><td>8-bit</td><td>44.1 kHz</td><td>63.5 MB</td></tr>
+          <tr><td>16-bit</td><td>44.1 kHz</td><td>127 MB</td></tr>
+          <tr class="highlight"><td><strong>24-bit</strong></td><td>44.1 kHz</td><td><strong>190.5 MB</strong></td></tr>
+          <tr><td>32-bit</td><td>44.1 kHz</td><td>508 MB</td></tr>
+        </table>
+      </div>
+      <div class="content-section">
+        <h3>File Format ที่ใช้ในกองถ่าย</h3>
+        <div class="checklist">
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><span><strong>WAV (.wav)</strong> — Uncompressed, คุณภาพสูงสุด ใช้ใน Production ทุกขั้นตอน</span></div></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><span><strong>BWF (Broadcast WAV)</strong> — WAV ที่ฝัง Metadata (Timecode, Scene, Take) ใช้ใน Professional Production</span></div></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><span><strong>MP3 (.mp3)</strong> — Compressed, ไฟล์เล็กกว่า แต่สูญเสียข้อมูลบางส่วน ไม่แนะนำสำหรับ Production</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div><div class="ft-sub">Sound in Production</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- ═══════════ PAGE: PROCESS ═══════════ -->
+<div id="page-process" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span class="current">กระบวนการในกอง</span></div>
+  <div class="inner-page">
+    <div class="page-header">
+      <p class="page-eyebrow">หัวข้อที่ 2</p>
+      <h1 class="page-h1">กระบวนการ<em>ในกองถ่าย</em></h1>
+      <p class="page-desc">Production Sound ตั้งแต่เตรียมตัวก่อนกองเริ่ม สู่การบันทึกทั้งภายในและภายนอกสถานที่</p>
+    </div>
+    <div class="topic-grid">
+      <div class="topic-card sr" onclick="nav('process-setup')">
+        <div class="topic-num">01</div>
+        <div class="topic-icon" style="background:rgba(91,16,232,.15)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--violet2)" stroke-width="1.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+        <div class="topic-title">เตรียมตัว & ติดตั้งอุปกรณ์</div>
+        <div class="topic-desc">Checklist ก่อนกองเริ่ม, Battery, Wireless Test, Timecode Sync</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+      <div class="topic-card sr" style="transition-delay:.1s" onclick="nav('process-shooting')">
+        <div class="topic-num">02</div>
+        <div class="topic-icon" style="background:rgba(155,196,240,.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="1.5"><circle cx="12" cy="12" r="2"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/></svg></div>
+        <div class="topic-title">ระหว่างการถ่ายทำ</div>
+        <div class="topic-desc">Monitoring, Gain Staging, Room Tone, Sound Report</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+      <div class="topic-card sr" style="transition-delay:.2s" onclick="nav('process-indoor')">
+        <div class="topic-num">03</div>
+        <div class="topic-icon" style="background:rgba(52,211,153,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+        <div class="topic-title">ถ่ายภายในอาคาร</div>
+        <div class="topic-desc">Acoustics, HVAC, Room Tone, Boom Placement ในพื้นที่ปิด</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+      <div class="topic-card sr" style="transition-delay:.3s" onclick="nav('process-outdoor')">
+        <div class="topic-num">04</div>
+        <div class="topic-icon" style="background:rgba(155,196,240,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sky2)" stroke-width="1.5"><circle cx="12" cy="4" r="2"/><path d="M5.45 5.11L2 12h20l-3.45-6.89"/><path d="M12 6v6"/></svg></div>
+        <div class="topic-title">ถ่ายภายนอกสถานที่</div>
+        <div class="topic-desc">Wind, Traffic, RF Management, Dead Cat, Blimp</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div><div class="ft-sub">Sound in Production</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Setup -->
+<div id="page-process-setup" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span onclick="nav('process')">กระบวนการ</span><span class="sep">/</span><span class="current">เตรียมตัว</span></div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('process')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header"><p class="page-eyebrow">01 · กระบวนการ</p><h1 class="page-h1">เตรียมตัว &amp; <em>ติดตั้งอุปกรณ์</em></h1></div>
+    <div class="content-body">
+      <div class="content-section">
+        <h3>Checklist ก่อนกองเริ่ม</h3>
+        <div class="checklist">
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>ตรวจสอบ Battery ทุกตัว (Recorder, Wireless TX/RX, Boom Mic)</span></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>ทดสอบ Wireless Channel และ RF Coordination ป้องกัน Intermodulation</span></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>ตั้งค่า Gain Staging บน Recorder ให้ -18 dBFS ถึง -12 dBFS</span></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Sync Timecode กับกล้องทุกตัว</span></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>ตั้งค่า Sample Rate 48 kHz, Bit Depth 24-bit</span></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>เตรียม Sound Report Sheet, ดินสอ, SD Card สำรอง</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Shooting -->
+<div id="page-process-shooting" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span onclick="nav('process')">กระบวนการ</span><span class="sep">/</span><span class="current">ระหว่างถ่าย</span></div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('process')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header"><p class="page-eyebrow">02 · กระบวนการ</p><h1 class="page-h1">ระหว่าง<em>การถ่ายทำ</em></h1></div>
+    <div class="content-body">
+      <div class="content-section">
+        <h3>Monitor ตลอดเวลา</h3>
+        <p>Production Sound Mixer ต้อง Monitor เสียงด้วย Headphone ตลอด — คอย Adjust Level ให้ Peak ไม่เกิน -6 dBFS และ Average อยู่ที่ -18 ถึง -12 dBFS</p>
+      </div>
+      <div class="content-section">
+        <h3>Room Tone — อย่าลืมเด็ดขาด</h3>
+        <p>หลังถ่ายทุก Scene บันทึก Room Tone อย่างน้อย <strong>60 วินาที</strong> — "เสียงความเงียบ" ของโลเคชั่น ที่ Dialogue Editor จะใช้ Fill ช่องว่างระหว่าง Take ได้อย่างเนียน</p>
+        <div class="tags"><span class="tag tag-sky">Room Tone</span><span class="tag tag-violet">Wild Track</span></div>
+      </div>
+      <div class="content-section">
+        <h3>Sound Report</h3>
+        <p>บันทึก Scene, Take, Timecode Start/End, Channel Assignment, และ Notes ทุก Take — ส่งเป็น PDF หรือ CSV ให้ Post-Production Team ทุกวัน</p>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Indoor -->
+<div id="page-process-indoor" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span onclick="nav('process')">กระบวนการ</span><span class="sep">/</span><span class="current">ภายในอาคาร</span></div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('process')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header"><p class="page-eyebrow">03 · กระบวนการ</p><h1 class="page-h1">ถ่าย<em>ภายในอาคาร</em></h1></div>
+    <div class="content-body">
+      <div class="content-section">
+        <h3>ข้อดีและความท้าทาย</h3>
+        <div class="checklist">
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>ควบคุม Ambient Sound ได้มากกว่าภายนอก</span></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>ต้องระวัง HVAC (เครื่องปรับอากาศ) — Low-Frequency Hum ที่มักไม่ได้ยินด้วยหู แต่ Mic จับได้</span></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>ห้องขนาดเล็กที่มี Hard Surface มาก = Reverb สูง = เสียงก้อง</span></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>แก้ด้วย Acoustic Treatment หรือ Boom ให้ใกล้นักแสดงมากขึ้น</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Outdoor -->
+<div id="page-process-outdoor" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span onclick="nav('process')">กระบวนการ</span><span class="sep">/</span><span class="current">ภายนอกสถานที่</span></div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('process')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header"><p class="page-eyebrow">04 · กระบวนการ</p><h1 class="page-h1">ถ่าย<em>ภายนอก</em>สถานที่</h1></div>
+    <div class="content-body">
+      <div class="content-section">
+        <h3>ความท้าทายหลัก</h3>
+        <div class="checklist">
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span><strong>ลม</strong> — ใช้ Windshield + Dead Cat กับ Boom Mic และ Blimp สำหรับ Shotgun</span></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Traffic & Ambient</strong> — เลือก Take Window ช่วงเงียบ หรือใช้ Shotgun Pattern แคบตัดเสียงข้าง</span></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span><strong>RF Interference</strong> — Coordinate Wireless Frequency ก่อนถ่าย ระวังพื้นที่ที่มีคลื่นหนาแน่น</span></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span><strong>เครื่องบิน</strong> — ต้องรอ หรือขอ "Cut!" จาก Director ทันที</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- ═══════════ PAGE: CABLES ═══════════ -->
+<div id="page-cables" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span class="current">สายสัญญาณ</span></div>
+  <div class="inner-page">
+    <div class="page-header">
+      <p class="page-eyebrow">หัวข้อที่ 3</p>
+      <h1 class="page-h1">สายสัญญาณ &amp; <em>Connector</em></h1>
+      <p class="page-desc">Analog, Digital, ตัวแปลงสาย และหลัก Balanced vs Unbalanced</p>
+    </div>
+    <div class="topic-grid">
+      <div class="topic-card sr" onclick="nav('cables-analog')">
+        <div class="topic-num">01</div>
+        <div class="topic-icon" style="background:rgba(155,196,240,.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        <div class="topic-title">สายสัญญาณอนาล็อก</div>
+        <div class="topic-desc">XLR, Phone 6.3mm TS/TRS, RCA, Mini Jack 3.5mm</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+      <div class="topic-card sr" style="transition-delay:.1s" onclick="nav('cables-digital')">
+        <div class="topic-num">02</div>
+        <div class="topic-icon" style="background:rgba(91,16,232,.15)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--violet2)" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></div>
+        <div class="topic-title">สายสัญญาณดิจิตอล</div>
+        <div class="topic-desc">MIDI, USB, Optical (TOSLINK, S/PDIF)</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+      <div class="topic-card sr" style="transition-delay:.2s" onclick="nav('cables-balanced')">
+        <div class="topic-num">03</div>
+        <div class="topic-icon" style="background:rgba(52,211,153,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="1.5"><path d="M12 22V12m0 0L6 6m6 6l6-6"/><circle cx="12" cy="4" r="2"/></svg></div>
+        <div class="topic-title">Balanced vs Unbalanced</div>
+        <div class="topic-desc">ทำไม XLR ถึงสำคัญ? และควรใช้เมื่อไหร่</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div><div class="ft-sub">Sound in Production</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Cables Analog -->
+<div id="page-cables-analog" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span onclick="nav('cables')">สายสัญญาณ</span><span class="sep">/</span><span class="current">อนาล็อก</span></div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('cables')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header"><p class="page-eyebrow">01 · สายสัญญาณ</p><h1 class="page-h1">สายสัญญาณ<em>อนาล็อก</em></h1></div>
+    <div class="content-body">
+      <div class="content-section">
+        <div class="cable-row"><span class="cable-name">XLR</span><span class="cable-desc">มาตรฐาน Professional 3-pin · Balanced · ทนสัญญาณรบกวน · ใช้ใน Boom, Recorder, Mixer</span><span class="cable-badge" style="background:rgba(91,16,232,.2);color:var(--violet2)">Balanced</span></div>
+        <div class="cable-row"><span class="cable-name">Phone 6.3mm TS</span><span class="cable-desc">Unbalanced · ใช้กับ Guitar, Keyboard · สายสั้นไม่เกิน 3 เมตร</span><span class="cable-badge" style="background:rgba(100,100,100,.15);color:#aaa">Unbalanced</span></div>
+        <div class="cable-row"><span class="cable-name">Phone 6.3mm TRS</span><span class="cable-desc">Balanced · ใช้ใน Studio Monitor, Insert Send/Return</span><span class="cable-badge" style="background:rgba(91,16,232,.2);color:var(--violet2)">Balanced</span></div>
+        <div class="cable-row"><span class="cable-name">RCA</span><span class="cable-desc">Unbalanced · Consumer Grade · Home Audio, Line Level</span><span class="cable-badge" style="background:rgba(100,100,100,.15);color:#aaa">Unbalanced</span></div>
+        <div class="cable-row"><span class="cable-name">Mini Jack 3.5mm TS</span><span class="cable-desc">Unbalanced Mono · หูฟัง, บางกล้อง</span><span class="cable-badge" style="background:rgba(155,196,240,.1);color:var(--sky)">Mobile</span></div>
+        <div class="cable-row"><span class="cable-name">Mini Jack 3.5mm TRS</span><span class="cable-desc">Balanced Stereo · กล้องส่วนใหญ่ใช้เป็น Mic Input</span><span class="cable-badge" style="background:rgba(155,196,240,.1);color:var(--sky)">Mobile</span></div>
+        <div class="cable-row"><span class="cable-name">Mini Jack 3.5mm TRRS</span><span class="cable-desc">Stereo + Mic · สมาร์ทโฟน, Lavalier บางรุ่น</span><span class="cable-badge" style="background:rgba(155,196,240,.1);color:var(--sky)">Mobile</span></div>
+        <p class="cable-group-title" style="margin-top:20px">ตัวแปลงสาย (Adapter)</p>
+        <div class="cable-row"><span class="cable-name">3.5mm → USB-C</span><span class="cable-desc">ต่อ Mic เข้า Android / iPad USB-C</span><span class="cable-badge" style="background:rgba(52,211,153,.1);color:#34D399">Adapter</span></div>
+        <div class="cable-row"><span class="cable-name">3.5mm → Lightning</span><span class="cable-desc">ต่อ Mic เข้า iPhone รุ่นเก่า</span><span class="cable-badge" style="background:rgba(52,211,153,.1);color:#34D399">Adapter</span></div>
+        <div class="cable-row"><span class="cable-name">3.5mm → 6.3mm</span><span class="cable-desc">ต่อ Lavalier เข้า Recorder หรือ Mixer XLR/TRS</span><span class="cable-badge" style="background:rgba(52,211,153,.1);color:#34D399">Adapter</span></div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Digital -->
+<div id="page-cables-digital" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span onclick="nav('cables')">สายสัญญาณ</span><span class="sep">/</span><span class="current">ดิจิตอล</span></div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('cables')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header"><p class="page-eyebrow">02 · สายสัญญาณ</p><h1 class="page-h1">สายสัญญาณ<em>ดิจิตอล</em></h1></div>
+    <div class="content-body">
+      <div class="content-section">
+        <div class="cable-row"><span class="cable-name">MIDI</span><span class="cable-desc">5-pin DIN · ส่งข้อมูล Note/Control ไม่ใช่เสียง · ใช้กับ Keyboard, Synthesizer</span><span class="cable-badge" style="background:rgba(155,196,240,.1);color:var(--sky)">Data</span></div>
+        <div class="cable-row"><span class="cable-name">USB</span><span class="cable-desc">USB-A/B/C · ส่งเสียงดิจิตอลและ Power · ใช้กับ Audio Interface, USB Mic</span><span class="cable-badge" style="background:rgba(155,196,240,.1);color:var(--sky)">Digital</span></div>
+        <div class="cable-row"><span class="cable-name">Optical (TOSLINK)</span><span class="cable-desc">ส่งเสียงผ่านแสง ไม่มี EMI · S/PDIF, ADAT · ใช้กับ Home Theater, Interface ระดับสูง</span><span class="cable-badge" style="background:rgba(155,196,240,.1);color:var(--sky)">Optical</span></div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Balanced -->
+<div id="page-cables-balanced" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span onclick="nav('cables')">สายสัญญาณ</span><span class="sep">/</span><span class="current">Balanced</span></div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('cables')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header"><p class="page-eyebrow">03 · สายสัญญาณ</p><h1 class="page-h1">Balanced vs <em>Unbalanced</em></h1></div>
+    <div class="content-body">
+      <div class="content-section">
+        <h3>Balanced Cable (XLR, TRS)</h3>
+        <p>มี 3 สาย: <strong>Hot (+)</strong>, <strong>Cold (−)</strong>, <strong>Ground</strong> — ระบบ Differential ยกเลิก Noise ที่เกิดระหว่างทาง (Common Mode Rejection) ทำให้ใช้สายยาว 30-100 เมตรโดยไม่มี Hum เข้า เหมาะกับงาน Professional ทุกประเภท</p>
+      </div>
+      <div class="content-section">
+        <h3>Unbalanced Cable (TS, RCA)</h3>
+        <p>มีแค่ 2 สาย: Signal และ Ground — ใช้ได้ดีสำหรับสายสั้นไม่เกิน 3-5 เมตร เมื่อสายยาวขึ้น จะเก็บสัญญาณ EMI จากอุปกรณ์ไฟฟ้ารอบข้าง ทำให้เกิด Hum หรือ Buzz</p>
+      </div>
+      <div class="content-section">
+        <h3>สรุปการเลือกใช้</h3>
+        <table class="info-table">
+          <tr><th>สถานการณ์</th><th>แนะนำ</th></tr>
+          <tr><td>สายยาว, Professional</td><td>XLR (Balanced)</td></tr>
+          <tr><td>Studio Monitor</td><td>TRS 6.3mm (Balanced)</td></tr>
+          <tr><td>กล้อง → Recorder</td><td>3.5mm TRS หรือ XLR</td></tr>
+          <tr><td>Consumer, สายสั้น</td><td>RCA, TS ได้</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- ═══════════ PAGE: GEAR ═══════════ -->
+<div id="page-gear" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span class="current">อุปกรณ์</span></div>
+  <div class="inner-page">
+    <div class="page-header">
+      <p class="page-eyebrow">หัวข้อที่ 4</p>
+      <h1 class="page-h1">อุปกรณ์<em>บันทึกเสียง</em></h1>
+      <p class="page-desc">Field Recorder, Wireless Mic, Boom Setup และ Lavalier ที่ใช้ใน DPU CA</p>
+    </div>
+    <div class="topic-grid">
+      <div class="topic-card sr" onclick="nav('gear-recorders')">
+        <div class="topic-num">01</div>
+        <div class="topic-icon" style="background:rgba(155,196,240,.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg></div>
+        <div class="topic-title">Field Recorder</div>
+        <div class="topic-desc">Zoom H6, H8, F4, F6, L8 — เปรียบเทียบ Spec และการเลือกใช้</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+      <div class="topic-card sr" style="transition-delay:.1s" onclick="nav('gear-wireless')">
+        <div class="topic-num">02</div>
+        <div class="topic-icon" style="background:rgba(91,16,232,.15)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--violet2)" stroke-width="1.5"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg></div>
+        <div class="topic-title">Wireless Mic System</div>
+        <div class="topic-desc">RØDE GO II, DJI Mic3, Saramonic, Sennheiser EW G4</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+      <div class="topic-card sr" style="transition-delay:.2s" onclick="nav('gear-boom')">
+        <div class="topic-num">03</div>
+        <div class="topic-icon" style="background:rgba(52,211,153,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="topic-title">Boom Setup</div>
+        <div class="topic-desc">Mic Shotgun, RØDE Blimp, Windshield, Dead Cat, Boom Pole</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+      <div class="topic-card sr" style="transition-delay:.3s" onclick="nav('gear-lavalier')">
+        <div class="topic-num">04</div>
+        <div class="topic-icon" style="background:rgba(155,196,240,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sky2)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M12 12v12"/></svg></div>
+        <div class="topic-title">ไมค์ Lavalier</div>
+        <div class="topic-desc">BOYA BY-M1S, Tentacle Sync — การซ่อนและการใช้งาน</div>
+        <div class="topic-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div><div class="ft-sub">Sound in Production</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Recorders -->
+<div id="page-gear-recorders" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span onclick="nav('gear')">อุปกรณ์</span><span class="sep">/</span><span class="current">Field Recorder</span></div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('gear')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header"><p class="page-eyebrow">01 · อุปกรณ์</p><h1 class="page-h1"><em>Field</em> Recorder</h1></div>
+    <div class="content-body" style="padding:20px">
+      <div class="gear-card"><div class="gear-header"><span class="gear-name">Zoom H6</span><span class="gear-badge" style="background:rgba(155,196,240,.12);color:var(--sky)">Entry Pro</span></div><div class="gear-specs"><span class="spec">4-Input (4 combo)</span><span class="spec">MP3, WAV</span><span class="spec">44.1 / 48 / 96 kHz</span><span class="spec">16 / 24-bit</span></div><p class="gear-note">เหมาะสำหรับงานขนาดเล็ก-กลาง รับ Mic พร้อมกันได้ 4 ช่อง มี Interchangeable Capsule</p></div>
+      <div class="gear-card"><div class="gear-header"><span class="gear-name">Zoom H8</span><span class="gear-badge" style="background:rgba(155,196,240,.12);color:var(--sky)">Mid Pro</span></div><div class="gear-specs"><span class="spec">6-Input (2 combo, 4XLR)</span><span class="spec">MP3, WAV</span><span class="spec">44.1 / 48 / 96 kHz</span><span class="spec">16 / 24-bit</span></div><p class="gear-note">รุ่นขยายจาก H6 เพิ่ม 2 XLR — เหมาะงานที่ต้องการ Mic หลายตัวพร้อมกัน</p></div>
+      <div class="gear-card"><div class="gear-header"><span class="gear-name">Zoom F4</span><span class="gear-badge" style="background:rgba(91,16,232,.18);color:var(--violet2)">Professional</span></div><div class="gear-specs"><span class="spec">4-Input (4 combo)</span><span class="spec">WAV</span><span class="spec">44.1–192 kHz</span><span class="spec">16 / 24-bit</span></div><p class="gear-note">รองรับ Sample Rate สูงสุด 192 kHz, Timecode In/Out, เหมาะ Professional Film Production</p></div>
+      <div class="gear-card"><div class="gear-header"><span class="gear-name">Zoom F6</span><span class="gear-badge" style="background:rgba(91,16,232,.18);color:var(--violet2)">Professional</span></div><div class="gear-specs"><span class="spec">6-Input XLR</span><span class="spec">WAV</span><span class="spec">44.1–192 kHz</span><span class="spec">16 / 24 / 32-bit Float</span></div><p class="gear-note">รองรับ 32-bit Float — แทบเป็นไปไม่ได้ที่เสียงจะ Clip ในกองถ่าย</p></div>
+      <div class="gear-card"><div class="gear-header"><span class="gear-name">Zoom L8</span><span class="gear-badge" style="background:rgba(52,211,153,.12);color:#34D399">Mixer + Rec</span></div><div class="gear-specs"><span class="spec">8-Input (6 combo, 2 TS)</span><span class="spec">WAV</span><span class="spec">44.1 / 48 / 96 kHz</span><span class="spec">16 / 24-bit</span></div><p class="gear-note">ผสม Mixer + Recorder เข้าด้วยกัน เหมาะกองขนาดเล็กที่ต้องการ Live Mixing</p></div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Wireless -->
+<div id="page-gear-wireless" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span onclick="nav('gear')">อุปกรณ์</span><span class="sep">/</span><span class="current">Wireless Mic</span></div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('gear')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header"><p class="page-eyebrow">02 · อุปกรณ์</p><h1 class="page-h1"><em>Wireless</em> Mic System</h1></div>
+    <div class="content-body" style="padding:20px">
+      <div class="gear-card"><div class="gear-header"><span class="gear-name">RØDE Wireless GO II</span><span class="gear-badge" style="background:rgba(155,196,240,.12);color:var(--sky)">ยอดนิยม</span></div><div class="gear-specs"><span class="spec">MONO / Stereo</span><span class="spec">WAV · 48 kHz</span><span class="spec">24 / 32-bit Float</span><span class="spec">ระยะ 200M</span></div><p class="gear-note">ต่อกล้องผ่าน 3.5mm · ปรับลดเสียงได้ -30dB · บันทึก Internal ได้ · นิยมมากสุดในกลุ่ม Creator</p></div>
+      <div class="gear-card"><div class="gear-header"><span class="gear-name">DJI Mic 3</span><span class="gear-badge" style="background:rgba(91,16,232,.18);color:var(--violet2)">ระยะไกลสุด</span></div><div class="gear-specs"><span class="spec">2 ไมค์ (ต่อได้ 4 ตัว)</span><span class="spec">WAV · 48 kHz · 24/32-bit</span><span class="spec">ระยะ 400M</span></div><p class="gear-note">ต่อ iPad/iPhone/Samsung ผ่าน Type-C ตรงได้เลย · มีแอป DJI MIMO · ระยะไกลที่สุดในกลุ่ม</p></div>
+      <div class="gear-card"><div class="gear-header"><span class="gear-name">Saramonic Blink 500 Pro</span><span class="gear-badge" style="background:rgba(155,196,240,.12);color:var(--sky)">Budget Pro</span></div><div class="gear-specs"><span class="spec">MONO / Stereo · Lavalier ในชุด</span><span class="spec">WAV · 48 kHz</span><span class="spec">24 / 32-bit Float</span><span class="spec">ระยะ 100M</span></div><p class="gear-note">ต่อโทรศัพท์ได้ แต่ต้องใช้ Adapter 3.5mm to USB-C / Lightning</p></div>
+      <div class="gear-card"><div class="gear-header"><span class="gear-name">Sennheiser EW G4</span><span class="gear-badge" style="background:rgba(52,211,153,.12);color:#34D399">Broadcast</span></div><div class="gear-specs"><span class="spec">1 TX + 1 RX · MONO</span><span class="spec">Analog Wireless</span><span class="spec">ระยะ 100M</span><span class="spec">Battery AA ×4</span></div><p class="gear-note">ระดับ Professional Broadcast · 1 ชุด ต้องใช้ถ่าน AA 4 ก้อน · Reliability สูงมาก</p></div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Boom -->
+<div id="page-gear-boom" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span onclick="nav('gear')">อุปกรณ์</span><span class="sep">/</span><span class="current">Boom Setup</span></div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('gear')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header"><p class="page-eyebrow">03 · อุปกรณ์</p><h1 class="page-h1"><em>Boom</em> Setup</h1></div>
+    <div class="content-body">
+      <div class="content-section">
+        <h3>ชุด Boom มีอะไรบ้าง?</h3>
+        <div class="checklist">
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><span><strong>Mic Shotgun</strong></span><div class="check-note">Pattern แคบ (Supercardioid / Hypercardioid) เช่น RØDE NTG3, Sennheiser MKH50 — ตัดเสียงข้างได้ดี</div></div></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><span><strong>RØDE Blimp</strong></span><div class="check-note">กรงลม (Basket) ครอบ Mic Shotgun — กัน Wind Noise ได้ดีมากสำหรับงานภายนอก</div></div></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><span><strong>Windshield / Dead Cat</strong></span><div class="check-note">ขนสังเคราะห์คลุม Blimp — ป้องกันลมได้มากกว่า Foam เพียงอย่างเดียว 10-15 dB</div></div></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><span><strong>Boom Pole</strong></span><div class="check-note">ไม้บูมปรับความยาวได้ เช่น RØDE Boompole — คุณภาพดีไม่ส่งเสียงเสียดสีเมื่อขยับ</div></div></div>
+        </div>
+      </div>
+      <div class="content-section">
+        <h3>หลัก Boom Placement</h3>
+        <p>วาง Mic ให้ใกล้นักแสดงมากที่สุดโดยยังอยู่นอก Frame — ยิ่งใกล้ยิ่งดี เพราะเสียงลดลง 6 dB ทุกครั้งที่ระยะห่างเพิ่มเป็นสองเท่า (Inverse Square Law)</p>
+        <p>Boom จากบนลงล่างได้ Frequency Response ของ Dialogue ที่ดีกว่าการ Boom จากล่างขึ้นบน เพราะหลีกเลี่ยง Proximity Effect และเสียง Chest ที่มากเกินไป</p>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- SUB: Lavalier -->
+<div id="page-gear-lavalier" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span onclick="nav('gear')">อุปกรณ์</span><span class="sep">/</span><span class="current">Lavalier</span></div>
+  <div class="inner-page">
+    <button class="back-btn" onclick="nav('gear')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>กลับ</button>
+    <div class="page-header"><p class="page-eyebrow">04 · อุปกรณ์</p><h1 class="page-h1">ไมค์ <em>Lavalier</em></h1></div>
+    <div class="content-body">
+      <div class="content-section">
+        <h3>ไมค์ Lavalier คืออะไร?</h3>
+        <p>ไมค์ขนาดเล็กที่หนีบติดเสื้อผ้า (Clip-on Mic) — ให้ระยะห่างจาก Mic ถึงปากคงที่แม้นักแสดงขยับ เป็น Backup ที่ดีเมื่อ Boom ทำงานได้ยาก</p>
+        <div class="checklist">
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><span><strong>BOYA BY-M1S</strong></span><div class="check-note">ต่อ 3.5mm ตรง · ราคาประหยัด · เหมาะสำหรับนักเรียนฝึกใช้</div></div></div>
+          <div class="check-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><span><strong>Tentacle Sync Lavalier</strong></span><div class="check-note">คุณภาพสูง · ใช้คู่กับ Tentacle Track E · เหมาะงาน Professional</div></div></div>
+        </div>
+      </div>
+      <div class="content-section">
+        <h3>ตำแหน่งติด Lavalier ที่ดี</h3>
+        <p>กึ่งกลางหน้าอกประมาณ 15-20 cm ต่ำกว่าคาง — ระวัง Clothing Rustle โดยใช้ Medical Tape ยึด Mic และ Loop สายให้หลวมเพื่อดูดซับแรงกระตุก</p>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · DPU</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- ═══════════ PAGE: TIER LIST ═══════════ -->
+<div id="page-tierlist" class="page">
+  <div class="breadcrumb"><span onclick="nav('home')">หน้าแรก</span><span class="sep">/</span><span class="current">Tier List</span></div>
+  <div class="inner-page">
+    <div class="page-header">
+      <p class="page-eyebrow">หัวข้อที่ 5</p>
+      <h1 class="page-h1">Tier List <em>เสียงในกอง</em></h1>
+      <p class="page-desc">จัดอันดับสถานการณ์จริงในกองถ่าย จาก "พระเจ้า" ถึง "ฉิบหาย" — ประสบการณ์จริงของ Sound Department</p>
+    </div>
+    <div class="content-body" style="padding:24px">
+      <div class="tier-row">
+        <div class="tier-head" style="background:linear-gradient(90deg,#1A4FC4,#3B6EE8)"><span class="tier-emoji">😇</span><div class="tier-label"><div style="font-size:16px">พระเจ้า</div><div style="font-size:11px;opacity:.7;font-weight:400">สถานการณ์ที่ Sound Department ฝัน</div></div></div>
+        <div class="tier-items-wrap"><span class="tier-chip">📍 โลเคชั่นเงียบ</span><span class="tier-chip">🎬 เทคเดียวจบ</span><span class="tier-chip">✅ ผู้กำกับบอก "เสียงคลีนมาก ผ่าน!"</span><span class="tier-chip">🎙️ อัด Room Tone ไม่มีใครขับตัว</span></div>
+      </div>
+      <div class="tier-row">
+        <div class="tier-head" style="background:linear-gradient(90deg,#1D7A55,#29A874)"><span class="tier-emoji">😐</span><div class="tier-label"><div style="font-size:16px">ปกติ</div><div style="font-size:11px;opacity:.7;font-weight:400">งานในกองที่พอรับได้</div></div></div>
+        <div class="tier-items-wrap"><span class="tier-chip">👕 เสื้อผ้าสีกับไมค์</span><span class="tier-chip">🔁 ขออีกรอบเพื่อเชฟ</span><span class="tier-chip">🚶 อัด Room Tone แล้วมีคนขับ</span><span class="tier-chip">🔋 แบตเหลือ 1 ขีด</span><span class="tier-chip">💥 Boom เกือบเข้า</span></div>
+      </div>
+      <div class="tier-row">
+        <div class="tier-head" style="background:linear-gradient(90deg,#5B10E8,#7B35F5)"><span class="tier-emoji">🙏</span><div class="tier-label"><div style="font-size:16px">สวดมนตร์</div><div style="font-size:11px;opacity:.7;font-weight:400">ต้องภาวนาให้ผ่านไป</div></div></div>
+        <div class="tier-items-wrap"><span class="tier-chip">🦎 จิ้งจกทักประโยคสำคัญ</span><span class="tier-chip">🐕 หมาเห่า</span><span class="tier-chip">😐 นักแสดงพูดเบา</span><span class="tier-chip">😤 ทีมงานเหยียบสาย</span></div>
+      </div>
+      <div class="tier-row">
+        <div class="tier-head" style="background:linear-gradient(90deg,#B85A00,#E07000)"><span class="tier-emoji">😤</span><div class="tier-label"><div style="font-size:16px">กำหมัด</div><div style="font-size:11px;opacity:.7;font-weight:400">ต้องอดทนอย่างสูง</div></div></div>
+        <div class="tier-items-wrap"><span class="tier-chip">🚛 รถกับข้าว</span><span class="tier-chip">🏍️ มอเตอร์ไซค์ท่อแว้น</span><span class="tier-chip">🎤 มีคนเตะสายไมค์</span><span class="tier-chip">💬 ทีมงานกระซิบแต่ไมค์ได้ยิน</span></div>
+      </div>
+      <div class="tier-row">
+        <div class="tier-head" style="background:linear-gradient(90deg,#8B0000,#C00000)"><span class="tier-emoji">💀</span><div class="tier-label"><div style="font-size:16px">ฉิบหาย</div><div style="font-size:11px;opacity:.7;font-weight:400">สถานการณ์ที่ไม่อยากให้เกิดเลย</div></div></div>
+        <div class="tier-items-wrap"><span class="tier-chip">🔴 ลืมกด Record</span><span class="tier-chip">🔴 ลืมกดเปิดไมค์ Wireless</span><span class="tier-chip">✈️ เสียงแตก (Clip)</span><span class="tier-chip">✈️ เครื่องบินบินผ่านตอน Take ดี</span></div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer"><div class="ft-left"><div><div class="ft-name">CA · Faculty of Communication Arts · DPU</div><div class="ft-sub">Sound in Production</div></div></div><div class="ft-right">by พงศธร ธรรมขันธ์ - Live Stream and Sound Specialist</div></footer>
+</div>
+
+<!-- ═══════════ WAVE PAGE TRANSITION OVERLAY ═══════════ -->
+<div id="waveTransition">
+  <canvas id="wtCanvas"></canvas>
+</div>
+
+<!-- ═══════════ JS ROUTER ═══════════ -->
+<script>
+const PAGES = [
+  'home','basics','basics-digital','basics-samplerate','basics-bitdepth','basics-filesize',
+  'process','process-setup','process-shooting','process-indoor','process-outdoor',
+  'cables','cables-analog','cables-digital','cables-balanced',
+  'gear','gear-recorders','gear-wireless','gear-boom','gear-lavalier',
+  'tierlist','diagram'
+];
+
+const ROOT_PAGES = ['basics','process','cables','gear','tierlist','diagram'];
+
+let currentPage = 'home';
+let navLocked = false;
+
+/* ══════════════════════════════════
+   WAVE TRANSITION ENGINE v3 (simple & smooth)
+══════════════════════════════════ */
+(function() {
+  const overlay = document.getElementById('waveTransition');
+  const cv      = document.getElementById('wtCanvas');
+  const ctx     = cv.getContext('2d');
+
+  const N = 40;           // fewer bars = lighter draw, still reads as a waveform
+  let bars = [];
+  let W = 0, H = 0;
+  let built = false;
+
+  // ── timing (seconds) — short & snappy ──
+  const T_IN   = 0.30;
+  const T_HOLD = 0.06;
+  const T_OUT  = 0.26;
+
+  let phase  = 'idle';
+  let animT  = 0;
+  let lastTs = null;
+  let rafId  = null;
+  let midCb  = null;
+  let midFired = false;
+
+  function hslToRgb(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
+  }
+
+  function barColor(i) {
+    const t = i / (N - 1);
+    let h;
+    if (t < 0.33)      h = 265 + t / 0.33 * 55;        // indigo → pink
+    else if (t < 0.66) h = 320 + (t - 0.33) / 0.33 * 70; // pink → cyan-ish
+    else                h = 175 - (t - 0.66) / 0.34 * 25; // cyan → green
+    const [r,g,b] = hslToRgb(h, 82, 64);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  // build once — geometry only depends on N, not on viewport pixel ratio
+  function buildBars() {
+    if (built) { layoutBars(); return; }
+    bars = [];
+    for (let i = 0; i < N; i++) {
+      const x = (i / (N - 1)) * 2 - 1; // -1..1
+      const hump = 0.5 * Math.exp(-x * x * 2.4) + 0.4 * Math.exp(-(x - 0.3) * (x - 0.3) * 4.5);
+      bars.push({
+        idx: i,
+        maxFrac: 0.16 + hump * 0.6,           // smaller overall height
+        color: barColor(i),
+        inDelay:  (i / (N - 1)) * 0.32,
+        outDelay: ((N - 1 - i) / (N - 1)) * 0.28,
+      });
+    }
+    built = true;
+    layoutBars();
+  }
+
+  function layoutBars() {
+    const spacing = W / N;
+    bars.forEach((b, i) => {
+      b.x  = i * spacing + spacing / 2;
+      b.bw = spacing * 0.5;
+    });
+  }
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2); // cap dpr for perf
+    W = window.innerWidth;
+    H = window.innerHeight;
+    cv.width  = W * dpr;
+    cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildBars();
+  }
+  resize();
+  let resizeT;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(resize, 150);
+  });
+
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+  function easeInCubic(t)  { return t * t * t; }
+
+  function drawBars(globalProg, dir) {
+    ctx.clearRect(0, 0, W, H);
+    const midY = H * 0.42;  // sits a bit above center, smaller footprint
+    const maxH = H * 0.16;  // overall wave is compact, not full-screen
+
+    for (let n = 0; n < bars.length; n++) {
+      const b = bars[n];
+      const delay  = dir === 'in' ? b.inDelay : b.outDelay;
+      const remain = 1 - delay;
+      const local  = Math.max(0, Math.min(1, (globalProg - delay) / remain));
+      const eased  = dir === 'in' ? easeOutCubic(local) : 1 - easeInCubic(local);
+
+      const halfH = maxH * b.maxFrac * eased;
+      if (halfH < 0.5) continue;
+
+      const top = midY - halfH;
+      const bot = midY + halfH;
+
+      ctx.fillStyle = b.color;
+      ctx.globalAlpha = 0.9;
+      ctx.fillRect(b.x - b.bw / 2, top, b.bw, halfH * 2);
+
+      // bright cap (cheap — no blur/filter)
+      ctx.globalAlpha = 1;
+      const capH = Math.max(1.5, b.bw * 0.3);
+      ctx.fillRect(b.x - b.bw / 2, top - capH / 2, b.bw, capH);
+      ctx.fillRect(b.x - b.bw / 2, bot - capH / 2, b.bw, capH);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function animate(ts) {
+    if (lastTs === null) lastTs = ts;
+    const dt = Math.min((ts - lastTs) / 1000, 0.04);
+    lastTs = ts;
+    animT += dt;
+
+    if (phase === 'wipe-in') {
+      const p = Math.min(animT / T_IN, 1);
+      drawBars(p, 'in');
+      if (p >= 1) { phase = 'hold'; animT = 0; }
+    } else if (phase === 'hold') {
+      drawBars(1, 'in');
+      // fire DOM swap once, right when hold starts — fully decoupled from drawing
+      if (!midFired) {
+        midFired = true;
+        if (midCb) { const cb = midCb; midCb = null; cb(); }
+      }
+      if (animT >= T_HOLD) { phase = 'wipe-out'; animT = 0; }
+    } else if (phase === 'wipe-out') {
+      const p = Math.min(animT / T_OUT, 1);
+      drawBars(p, 'out');
+      if (p >= 1) {
+        phase = 'idle';
+        overlay.style.opacity = '0';
+        overlay.classList.remove('wt-active');
+        lastTs = null;
+        navLocked = false;
+        return;
+      }
+    }
+
+    rafId = requestAnimationFrame(animate);
+  }
+
+  window.playWaveTransition = function(callback) {
+    if (navLocked) return;
+    navLocked = true;
+    if (!built) resize();
+    layoutBars();
+    midCb    = callback;
+    midFired = false;
+    phase    = 'wipe-in';
+    animT    = 0;
+    lastTs   = null;
+    overlay.style.opacity = '1';
+    overlay.classList.add('wt-active');
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(animate);
+  };
+})();
+
+/* ── NAV FUNCTION (with wave transition) ── */
+function _doNav(pageId) {
+  // Hide all
+  PAGES.forEach(id => {
+    const el = document.getElementById('page-' + id);
+    if (el) { el.classList.remove('active','show'); }
+  });
+
+  // Show target
+  const target = document.getElementById('page-' + pageId);
+  if (!target) return;
+  target.classList.add('active');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { target.classList.add('show'); });
+  });
+
+  currentPage = pageId;
+
+  // Top nav visibility
+  const topnav = document.getElementById('topnav');
+  topnav.style.display = pageId === 'home' ? 'none' : 'flex';
+
+  // Active nav link
+  document.querySelectorAll('[data-nav]').forEach(el => {
+    el.classList.remove('active-nav');
+    const root = pageId.split('-')[0];
+    if (el.dataset.nav === root || el.dataset.nav === pageId) el.classList.add('active-nav');
+  });
+
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'instant' });
+
+  // Trigger scroll reveals
+  setTimeout(triggerReveal, 140);
+}
+
+function nav(pageId) {
+  if (pageId === currentPage) return;
+  playWaveTransition(() => { _doNav(pageId); });
+}
+
+// silent init (no transition on first load)
+function navInit(pageId) {
+  _doNav(pageId);
+  navLocked = false;
+}
+
+function triggerReveal() {
+  const els = document.querySelectorAll('#page-' + currentPage + ' .sr');
+  els.forEach((el, i) => {
+    setTimeout(() => el.classList.add('vis'), i * 80);
+  });
+}
+
+function scrollToSections() {
+  document.getElementById('homeSections')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+/* ════════════════════════════════════
+   WAVE ANIMATIONS
+════════════════════════════════════ */
+
+// Utility: sync canvas resolution to its CSS display size
+function rsCanvas(cv) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = cv.getBoundingClientRect();
+  const w = rect.width || cv.offsetWidth || 1;
+  const h = rect.height || cv.offsetHeight || 1;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+    cv.width  = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    const ctx = cv.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return { W: w, H: h, ctx, fresh: true };
+  }
+  return { W: w, H: h, ctx: cv.getContext('2d'), fresh: false };
+}
+
+// ── 1. Hero background wave (subtle bars)
+(function() {
+  const cv = document.getElementById('heroWave');
+  if (!cv) return;
+  const ctx = cv.getContext('2d'); let t = 0;
+  function draw() {
+    cv.width = cv.offsetWidth; cv.height = cv.offsetHeight || window.innerHeight * 0.55;
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    const bars = 110;
+    for (let i = 0; i < bars; i++) {
+      const x = (i / bars) * W;
+      const d = Math.abs(i - bars * .5) / (bars * .5);
+      const env = 1 - d * d * .5;
+      const h = (Math.sin(i * .22 + t * 1.6) * .42 + Math.sin(i * .55 + t * 2.3) * .3 + Math.sin(i * .1 + t * 1.1) * .28) * env * (H * .5) + 4;
+      const ah = Math.abs(h);
+      const bw = W / bars - 1.2;
+      ctx.fillStyle = i % 4 === 0 ? `rgba(91,16,232,${.28+env*.4})` : `rgba(155,196,240,${.22+env*.38})`;
+      ctx.fillRect(x, H/2 - ah, bw, ah * 2);
+    }
+    t += .015; requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── 2. Spectrum Bars (multicolor, reference top-left)
+(function() {
+  const cv = document.getElementById('wv1');
+  if (!cv) return;
+  let t = 0;
+  const COLS = ['#FF4DA6','#FF6B35','#FFD700','#00E5FF','#9BC4F0','#7B35F5','#34D399'];
+  function draw() {
+    const { W, H, ctx } = rsCanvas(cv);
+    ctx.clearRect(0, 0, W, H);
+    const bars = 64;
+    for (let i = 0; i < bars; i++) {
+      const x = (i / bars) * W;
+      const bw = W / bars - 2;
+      const phase = i * .22 + t * 2.2;
+      const h = (Math.sin(phase) * .45 + Math.sin(i * .5 + t * 1.4) * .3 + Math.sin(i * .09 + t * 3) * .25) * (H * .44) + (H * .06);
+      const ah = Math.max(3, Math.abs(h));
+      const col = COLS[Math.floor(i / bars * COLS.length)];
+      const grd = ctx.createLinearGradient(0, H/2 - ah, 0, H/2 + ah);
+      grd.addColorStop(0, col); grd.addColorStop(1, col + '33');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(x, H/2-ah, bw, ah*2, 2) : ctx.rect(x, H/2-ah, bw, ah*2);
+      ctx.fill();
+      ctx.fillStyle = col;
+      ctx.fillRect(x, H/2 - ah - 2, bw, 2);
+    }
+    t += .018; requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── 3. Oscilloscope (smooth sine, reference top-right style)
+(function() {
+  const cv = document.getElementById('wv2');
+  if (!cv) return;
+  let t = 0;
+  function draw() {
+    const { W, H, ctx } = rsCanvas(cv);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(8,5,32,.0)'; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(155,196,240,.05)'; ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      ctx.beginPath(); ctx.moveTo(0, H * i / 4); ctx.lineTo(W, H * i / 4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W * i / 4, 0); ctx.lineTo(W * i / 4, H); ctx.stroke();
+    }
+    const layers = [
+      { fr: .025, sp: 1.8, amp: .38, col: '#00E5FF', lw: 2.5, al: .95 },
+      { fr: .04,  sp: 2.5, amp: .22, col: '#FF4DA6', lw: 2, al: .7 },
+      { fr: .015, sp: 1.2, amp: .28, col: 'rgba(155,196,240', lw: 1.2, al: .4, raw:true },
+    ];
+    layers.forEach(l => {
+      ctx.beginPath();
+      for (let x = 0; x <= W; x++) {
+        const y = H/2 + Math.sin(x * l.fr + t * l.sp) * H * l.amp
+                      + Math.sin(x * l.fr * 2.3 + t * l.sp * .7) * H * l.amp * .3;
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = l.raw ? `rgba(155,196,240,${l.al})` : l.col + Math.round(l.al * 255).toString(16).padStart(2,'0');
+      ctx.lineWidth = l.lw; ctx.stroke();
+    });
+    t += .02; requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── 4. Dot Matrix (reference center-left orange dots)
+(function() {
+  const cv = document.getElementById('wv3');
+  if (!cv) return;
+  let t = 0;
+  const DCOLS = ['#FF6B35','#FFD700','#FF4DA6','#9BC4F0'];
+  function draw() {
+    const { W, H, ctx } = rsCanvas(cv);
+    ctx.clearRect(0, 0, W, H);
+    const cols = 42, rows = 10;
+    const cw = W / cols, rh = H / rows;
+    for (let ci = 0; ci < cols; ci++) {
+      const amp = (Math.sin(ci * .28 + t * 2) * .4 + Math.sin(ci * .55 + t * 1.3) * .3 + .7) * rows * .5;
+      const peak = rows / 2 - amp / 2;
+      for (let ri = 0; ri < rows; ri++) {
+        const inRange = ri >= Math.floor(peak) && ri <= Math.floor(peak + amp);
+        if (!inRange) continue;
+        const progress = (ri - peak) / amp;
+        const ci2 = Math.floor(ci / cols * DCOLS.length);
+        const alpha = .5 + progress * .5;
+        ctx.fillStyle = DCOLS[ci2] + Math.round(alpha * 220).toString(16).padStart(2,'0');
+        const r = Math.min(cw, rh) * .28;
+        ctx.beginPath();
+        ctx.arc(ci * cw + cw/2, ri * rh + rh/2, r, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+    t += .022; requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── 5. Sine Layers (multi-color concentric waves, reference left row-3)
+(function() {
+  const cv = document.getElementById('wv4');
+  if (!cv) return;
+  let t = 0;
+  const WCOLS = ['#FF4DA6','#9B59B6','#3498DB','#00E5FF','#2ECC71','#F39C12'];
+  function draw() {
+    const { W, H, ctx } = rsCanvas(cv);
+    ctx.clearRect(0, 0, W, H);
+    WCOLS.forEach((col, li) => {
+      const offset = (li / WCOLS.length) * Math.PI * 2;
+      const amp = H * (.08 + li * .025);
+      ctx.beginPath();
+      for (let x = 0; x <= W; x++) {
+        const y = H/2 + Math.sin(x * .03 + t * 1.5 + offset) * amp
+                      + Math.sin(x * .07 + t * .8 + offset * 1.3) * amp * .35;
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = col; ctx.lineWidth = 1.8;
+      ctx.globalAlpha = .75 - li * .08;
+      ctx.stroke();
+    });
+    ctx.globalAlpha = 1;
+    t += .019; requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── 6. Gradient Fill Wave (reference bottom-right pink/cyan)
+(function() {
+  const cv = document.getElementById('wv5');
+  if (!cv) return;
+  let t = 0;
+  function draw() {
+    const { W, H, ctx } = rsCanvas(cv);
+    ctx.clearRect(0, 0, W, H);
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x++) {
+      const y = H/2 + Math.sin(x * .022 + t * 1.4) * H * .3 + Math.sin(x * .05 + t * .9) * H * .1;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, H); ctx.closePath();
+    const g1 = ctx.createLinearGradient(0, 0, 0, H);
+    g1.addColorStop(0, 'rgba(0,229,255,.6)'); g1.addColorStop(1, 'rgba(0,229,255,.04)');
+    ctx.fillStyle = g1; ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x++) {
+      const y = H/2 + Math.sin(x * .028 + t * 1.9 + 1.2) * H * .28 + Math.sin(x * .06 + t * 1.1) * H * .09;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, H); ctx.closePath();
+    const g2 = ctx.createLinearGradient(0, 0, 0, H);
+    g2.addColorStop(0, 'rgba(255,77,166,.55)'); g2.addColorStop(1, 'rgba(255,77,166,.04)');
+    ctx.fillStyle = g2; ctx.fill();
+    t += .017; requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// Scroll reveal for home
+const ro = new IntersectionObserver(es => {
+  es.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis'); });
+}, { threshold: .1 });
+
+// Init (silent — no transition on first load)
+navInit('home');
+document.querySelectorAll('#page-home .sr').forEach(el => ro.observe(el));
+</script>
+
+<!-- ═══════════════════════════════════
+  PAGE: SOUND SYSTEM DIAGRAM
+═══════════════════════════════════ -->
+<div id="page-diagram" class="page">
+<style>
+/* ── DIAGRAM PAGE LAYOUT ── */
+#page-diagram{height:100vh;display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
+.dg-header{display:flex;align-items:center;justify-content:space-between;padding:60px 20px 10px;flex-shrink:0}
+.dg-title{font-size:clamp(18px,2.5vw,28px);font-weight:600;
+  background:linear-gradient(135deg,var(--sky2),var(--sky),var(--violet2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.dg-subtitle{font-size:11px;color:var(--muted);margin-top:2px}
+.dg-controls{display:flex;gap:8px;align-items:center}
+.dg-btn{background:rgba(155,196,240,.08);border:1px solid var(--border2);color:var(--sky);
+  padding:6px 14px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;
+  font-family:'Inter',sans-serif;transition:all .2s}
+.dg-btn:hover{background:rgba(91,16,232,.2);border-color:var(--border)}
+.dg-btn.danger{color:#F87171;border-color:rgba(248,113,113,.2);background:rgba(248,113,113,.06)}
+.dg-btn.danger:hover{background:rgba(248,113,113,.14)}
+
+/* ── MAIN AREA: sidebar + canvas ── */
+.dg-body{display:flex;flex:1;min-height:0;gap:0}
+
+/* ── SIDEBAR ── */
+.dg-sidebar{width:180px;flex-shrink:0;background:rgba(8,5,32,.95);
+  border-right:1px solid var(--border);overflow-y:auto;padding:10px 8px;
+  display:flex;flex-direction:column;gap:4px}
+.dg-sidebar-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);padding:6px 6px 4px;margin-bottom:2px}
+.dg-device{display:flex;align-items:center;gap:8px;padding:8px 8px;
+  border-radius:8px;cursor:grab;user-select:none;transition:all .18s;
+  border:1px solid transparent}
+.dg-device:hover{background:rgba(155,196,240,.07);border-color:var(--border2)}
+.dg-device:active{cursor:grabbing;opacity:.7}
+.dg-device-icon{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0}
+.dg-device-info{flex:1;min-width:0}
+.dg-device-name{font-size:10px;font-weight:600;color:var(--sky2);line-height:1.2}
+.dg-device-port{font-size:9px;color:var(--muted);margin-top:1px}
+
+/* ── CANVAS AREA ── */
+.dg-canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+#dgCanvas{position:absolute;inset:0;width:100%;height:100%;cursor:default}
+
+/* ── STATUS TOAST ── */
+.dg-toast{position:absolute;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);
+  opacity:0;transition:all .28s;z-index:20;pointer-events:none;
+  padding:8px 18px;border-radius:20px;font-size:12px;font-weight:600;
+  white-space:nowrap;display:flex;align-items:center;gap:8px}
+.dg-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.dg-toast.ok{background:rgba(52,211,153,.18);border:1px solid rgba(52,211,153,.4);color:#34D399}
+.dg-toast.err{background:rgba(248,113,113,.18);border:1px solid rgba(248,113,113,.4);color:#F87171}
+.dg-toast.info{background:rgba(155,196,240,.18);border:1px solid var(--border2);color:var(--sky)}
+
+/* ── CANVAS NODE styles applied via JS ── */
+.dg-port-hint{position:absolute;font-size:9px;color:var(--muted);pointer-events:none;
+  background:rgba(4,2,15,.85);border:1px solid var(--border2);border-radius:4px;
+  padding:2px 7px;white-space:nowrap;z-index:10;transition:opacity .18s;opacity:0}
+</style>
+
+<div class="dg-header">
+  <div>
+    <div class="dg-title">Sound System Diagram</div>
+    <div class="dg-subtitle">ลากอุปกรณ์จากแถบซ้ายมาวางบน Canvas · คลิกที่ Port เพื่อต่อสาย</div>
+  </div>
+  <div class="dg-controls">
+    <button class="dg-btn" onclick="dgAutoLayout()">⚙ Auto Layout</button>
+    <button class="dg-btn" onclick="dgClearConnections()">↺ ล้างสาย</button>
+    <button class="dg-btn danger" onclick="dgClearAll()">✕ ล้างทั้งหมด</button>
+  </div>
+</div>
+
+<div class="dg-body">
+  <!-- Sidebar -->
+  <div class="dg-sidebar">
+    <div class="dg-sidebar-title">อุปกรณ์ทั้งหมด</div>
+    <!-- items injected by JS -->
+    <div id="dgDeviceList"></div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="dg-canvas-wrap" id="dgCanvasWrap">
+    <canvas id="dgCanvas"></canvas>
+    <div id="dgToast" class="dg-toast">✓ เชื่อมต่อได้</div>
+  </div>
+</div>
+</div><!-- end page-diagram -->
+
+<script>
+/* ══════════════════════════════════════════════════
+   SOUND SYSTEM DIAGRAM ENGINE
+══════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+/* ── DEVICE CATALOGUE (corrected port counts) ──────
+   ports: { id, label, type, io }
+   type: 'xlr'|'trs'|'ts'|'mini35'|'usb'|'rf'|'speakon'
+   io:   'out'|'in'|'both'
+─────────────────────────────────────────────────── */
+const CATALOGUE = [
+  /* ── Field Recorders ── */
+  {
+    id:'zoom-h6', label:'Zoom H6', cat:'recorder', color:'#3B6EE8', icon:'H6',
+    ports:[
+      {id:'h6-xlr1',  label:'XLR 1 In',    type:'xlr',    io:'in'},
+      {id:'h6-xlr2',  label:'XLR 2 In',    type:'xlr',    io:'in'},
+      {id:'h6-35-in', label:'3.5mm In',     type:'mini35', io:'in'},
+      {id:'h6-35-out',label:'3.5mm Out',    type:'mini35', io:'out'},
+      {id:'h6-hp',    label:'HP Out 3.5mm', type:'mini35', io:'out'},
+      {id:'h6-usb',   label:'USB-C Data',   type:'usb',    io:'both'},
+    ]
+  },
+  {
+    id:'zoom-h8', label:'Zoom H8', cat:'recorder', color:'#3B6EE8', icon:'H8',
+    ports:[
+      {id:'h8-xlr1',  label:'XLR 1 In',    type:'xlr',    io:'in'},
+      {id:'h8-xlr2',  label:'XLR 2 In',    type:'xlr',    io:'in'},
+      {id:'h8-xlr3',  label:'XLR 3 In',    type:'xlr',    io:'in'},
+      {id:'h8-xlr4',  label:'XLR 4 In',    type:'xlr',    io:'in'},
+      {id:'h8-35-in', label:'3.5mm In L',   type:'mini35', io:'in'},
+      {id:'h8-35-r',  label:'3.5mm In R',   type:'mini35', io:'in'},
+      {id:'h8-hp',    label:'HP Out 3.5mm', type:'mini35', io:'out'},
+      {id:'h8-usb',   label:'USB-C Data',   type:'usb',    io:'both'},
+    ]
+  },
+  {
+    id:'zoom-f4', label:'Zoom F4', cat:'recorder', color:'#2255CC', icon:'F4',
+    ports:[
+      {id:'f4-xlr1',  label:'XLR 1 In',    type:'xlr',    io:'in'},
+      {id:'f4-xlr2',  label:'XLR 2 In',    type:'xlr',    io:'in'},
+      {id:'f4-xlr3',  label:'XLR 3 In',    type:'xlr',    io:'in'},
+      {id:'f4-xlr4',  label:'XLR 4 In',    type:'xlr',    io:'in'},
+      {id:'f4-out-l', label:'Line Out L',   type:'trs',    io:'out'},
+      {id:'f4-out-r', label:'Line Out R',   type:'trs',    io:'out'},
+      {id:'f4-hp',    label:'HP Out 3.5mm', type:'mini35', io:'out'},
+      {id:'f4-tc',    label:'Timecode I/O', type:'mini35', io:'both'},
+    ]
+  },
+  {
+    id:'zoom-f6', label:'Zoom F6', cat:'recorder', color:'#2255CC', icon:'F6',
+    ports:[
+      {id:'f6-xlr1',  label:'XLR 1 In',    type:'xlr',    io:'in'},
+      {id:'f6-xlr2',  label:'XLR 2 In',    type:'xlr',    io:'in'},
+      {id:'f6-xlr3',  label:'XLR 3 In',    type:'xlr',    io:'in'},
+      {id:'f6-xlr4',  label:'XLR 4 In',    type:'xlr',    io:'in'},
+      {id:'f6-xlr5',  label:'XLR 5 In',    type:'xlr',    io:'in'},
+      {id:'f6-xlr6',  label:'XLR 6 In',    type:'xlr',    io:'in'},
+      {id:'f6-out-l', label:'Line Out L',   type:'trs',    io:'out'},
+      {id:'f6-out-r', label:'Line Out R',   type:'trs',    io:'out'},
+      {id:'f6-hp',    label:'HP Out 3.5mm', type:'mini35', io:'out'},
+      {id:'f6-tc',    label:'Timecode I/O', type:'mini35', io:'both'},
+    ]
+  },
+  {
+    id:'zoom-l8', label:'Zoom L8 Mixer', cat:'mixer', color:'#1A56C4', icon:'L8',
+    ports:[
+      {id:'l8-xlr1',  label:'XLR/TRS Ch1', type:'xlr',    io:'in'},
+      {id:'l8-xlr2',  label:'XLR/TRS Ch2', type:'xlr',    io:'in'},
+      {id:'l8-xlr3',  label:'XLR/TRS Ch3', type:'xlr',    io:'in'},
+      {id:'l8-xlr4',  label:'XLR/TRS Ch4', type:'xlr',    io:'in'},
+      {id:'l8-xlr5',  label:'XLR/TRS Ch5', type:'xlr',    io:'in'},
+      {id:'l8-xlr6',  label:'XLR/TRS Ch6', type:'xlr',    io:'in'},
+      {id:'l8-ts7',   label:'TS Ch7',       type:'ts',     io:'in'},
+      {id:'l8-ts8',   label:'TS Ch8',       type:'ts',     io:'in'},
+      {id:'l8-main-l',label:'Main Out L XLR',type:'xlr',   io:'out'},
+      {id:'l8-main-r',label:'Main Out R XLR',type:'xlr',   io:'out'},
+      {id:'l8-hp',    label:'HP Out 3.5mm', type:'mini35', io:'out'},
+      {id:'l8-usb',   label:'USB-C Audio',  type:'usb',    io:'both'},
+    ]
+  },
+  /* ── Wireless Mics ── */
+  {
+    id:'rode-wgo2', label:'RØDE GO II', cat:'wireless', color:'#9B59B6', icon:'GO2',
+    ports:[
+      {id:'go2-rx35', label:'RX 3.5mm Out',  type:'mini35', io:'out'},
+      {id:'go2-usb',  label:'RX USB-C Out',   type:'usb',    io:'out'},
+      {id:'go2-lav',  label:'TX Lavalier In', type:'mini35', io:'in'},
+    ]
+  },
+  {
+    id:'saramonic', label:'Saramonic Blink 500', cat:'wireless', color:'#8E44AD', icon:'SAR',
+    ports:[
+      {id:'sar-rx35', label:'RX 3.5mm Out',   type:'mini35', io:'out'},
+      {id:'sar-usbc', label:'RX USB-C Out',    type:'usb',    io:'out'},
+      {id:'sar-lav',  label:'TX Lavalier In',  type:'mini35', io:'in'},
+    ]
+  },
+  {
+    id:'dji-mic3', label:'DJI Mic 3', cat:'wireless', color:'#7D3C98', icon:'DJI',
+    ports:[
+      {id:'dji-rx35', label:'RX 3.5mm Out',   type:'mini35', io:'out'},
+      {id:'dji-usbc', label:'RX USB-C Out',    type:'usb',    io:'out'},
+      {id:'dji-lav',  label:'TX Lavalier In',  type:'mini35', io:'in'},
+    ]
+  },
+  {
+    id:'senn-ew', label:'Sennheiser EW G4', cat:'wireless', color:'#27AE60', icon:'EW',
+    ports:[
+      {id:'ew-xlr',   label:'RX XLR Out',     type:'xlr',    io:'out'},
+      {id:'ew-35out', label:'RX 3.5mm Out',    type:'mini35', io:'out'},
+      {id:'ew-lav',   label:'TX Lavalier In',  type:'mini35', io:'in'},
+    ]
+  },
+  /* ── Microphones ── */
+  {
+    id:'mic-shotgun', label:'Boom (Shotgun)', cat:'mic', color:'#E67E22', icon:'SHT',
+    ports:[
+      {id:'shot-xlr', label:'XLR Out', type:'xlr', io:'out'},
+    ]
+  },
+  {
+    id:'rode-ntg', label:'RØDE VideoMic NTG', cat:'mic', color:'#E67E22', icon:'NTG',
+    ports:[
+      {id:'ntg-35',  label:'3.5mm Out TRS', type:'mini35', io:'out'},
+      {id:'ntg-usb', label:'USB-C Out',     type:'usb',    io:'out'},
+    ]
+  },
+  {
+    id:'lav-boya', label:'Lavalier (BOYA)', cat:'mic', color:'#CA6F1E', icon:'LAV',
+    ports:[
+      {id:'lav-35', label:'3.5mm TRRS Out', type:'mini35', io:'out'},
+    ]
+  },
+  /* ── Cameras ── */
+  {
+    id:'camera-dslr', label:'DSLR Camera', cat:'camera', color:'#2C3E50', icon:'CAM',
+    ports:[
+      {id:'cam-35in', label:'3.5mm Mic In', type:'mini35', io:'in'},
+      {id:'cam-hdmi', label:'HDMI Out',     type:'usb',    io:'out'},
+      {id:'cam-usb',  label:'USB-C',        type:'usb',    io:'both'},
+    ]
+  },
+  /* ── Signal Processors ── */
+  {
+    id:'di-box', label:'DI Box', cat:'other', color:'#7F8C8D', icon:'DI',
+    ports:[
+      {id:'di-ts',    label:'TS/TRS In',       type:'ts',  io:'in'},
+      {id:'di-xlrout',label:'XLR Balanced Out', type:'xlr', io:'out'},
+      {id:'di-thru',  label:'Thru (TRS)',       type:'trs', io:'out'},
+    ]
+  },
+  /* ── Speakers / Monitoring ── */
+  {
+    id:'monitor-spk', label:'Monitor Speaker', cat:'speaker', color:'#C0392B', icon:'MON',
+    ports:[
+      {id:'spk-xlr',  label:'XLR In',   type:'xlr',    io:'in'},
+      {id:'spk-trs',  label:'TRS In',   type:'trs',    io:'in'},
+    ]
+  },
+  {
+    id:'headphone', label:'Headphone', cat:'other', color:'#16A085', icon:'HP',
+    ports:[
+      {id:'hp-35', label:'3.5mm In',  type:'mini35', io:'in'},
+      {id:'hp-63', label:'6.3mm In',  type:'trs',    io:'in'},
+    ]
+  },
+];
+
+/* ── COMPATIBILITY RULES ── */
+const COMPAT = [
+  ['xlr','xlr'],
+  ['trs','trs'],
+  ['trs','xlr'],
+  ['ts','ts'],
+  ['ts','trs'],
+  ['mini35','mini35'],
+  ['mini35','trs'],
+  ['mini35','xlr'],
+  ['usb','usb'],
+  ['rf','rf'],
+  ['speakon','speakon'],
+];
+
+const COMPAT_MSG = {
+  'xlr-xlr':       '✓ XLR → XLR เชื่อมต่อได้ตรงๆ',
+  'trs-trs':       '✓ TRS → TRS เชื่อมต่อได้ตรงๆ',
+  'trs-xlr':       '⚠ ต้องใช้ Adapter TRS→XLR',
+  'xlr-trs':       '⚠ ต้องใช้ Adapter XLR→TRS',
+  'ts-ts':         '✓ TS → TS เชื่อมต่อได้ตรงๆ',
+  'ts-trs':        '⚠ ต้องใช้ Adapter TS→TRS',
+  'mini35-mini35': '✓ 3.5mm → 3.5mm เชื่อมต่อได้ตรงๆ',
+  'mini35-trs':    '⚠ ต้องใช้ Adapter 3.5mm→6.3mm TRS',
+  'trs-mini35':    '⚠ ต้องใช้ Adapter TRS→3.5mm',
+  'mini35-xlr':    '⚠ ต้องใช้ Adapter 3.5mm→XLR',
+  'xlr-mini35':    '⚠ ต้องใช้ Adapter XLR→3.5mm',
+  'usb-usb':       '✓ USB เชื่อมต่อได้',
+  'speakon-speakon':'✓ Speakon เชื่อมต่อได้',
+};
+
+function canConnect(tA, tB) {
+  return COMPAT.some(([a,b]) => (a===tA&&b===tB)||(a===tB&&b===tA));
+}
+function connectMsg(tA, tB) {
+  const k=tA+'-'+tB, k2=tB+'-'+tA;
+  return COMPAT_MSG[k]||COMPAT_MSG[k2]||null;
+}
+
+/* ── PORT TYPE COLORS ── */
+const PORT_COLORS = {
+  xlr:'#4FC3F7', trs:'#81C784', ts:'#FFB74D',
+  mini35:'#CE93D8', usb:'#80DEEA', rf:'#FF8A65', speakon:'#F48FB1'
+};
+
+/* ── STATE ── */
+let nodes    = [];
+let conns    = [];
+let drag     = null;
+let portDrag = null;
+let hovPort  = null;
+let selNode  = null;  // selected node (for delete button)
+let nextId   = 1;
+
+const cv    = document.getElementById('dgCanvas');
+const ctx   = cv.getContext('2d');
+const wrap  = document.getElementById('dgCanvasWrap');
+const toast = document.getElementById('dgToast');
+let toastTimer;
+
+/* ── SIDEBAR ── */
+function buildSidebar() {
+  const cats = {
+    recorder:'Field Recorder', mixer:'Mixer', wireless:'Wireless Mic',
+    mic:'Microphone', camera:'Camera', speaker:'Speaker/Monitor', other:'อื่นๆ'
+  };
+  const list = document.getElementById('dgDeviceList');
+  list.innerHTML = '';
+  Object.entries(cats).forEach(([cat, label]) => {
+    const items = CATALOGUE.filter(d=>d.cat===cat);
+    if (!items.length) return;
+    const hdr = document.createElement('div');
+    hdr.className = 'dg-sidebar-title';
+    hdr.style.cssText = 'margin-top:8px;font-size:8px;opacity:.5';
+    hdr.textContent = label;
+    list.appendChild(hdr);
+    items.forEach(def => {
+      const el = document.createElement('div');
+      el.className = 'dg-device';
+      el.draggable = true;
+      el.innerHTML = `
+        <div class="dg-device-icon" style="background:${def.color}22;border:1px solid ${def.color}44">
+          <span style="font-size:9px;font-weight:700;color:${def.color}">${def.icon}</span>
+        </div>
+        <div class="dg-device-info">
+          <div class="dg-device-name">${def.label}</div>
+          <div class="dg-device-port">${def.ports.length} ports</div>
+        </div>`;
+      el.addEventListener('dragstart', e => e.dataTransfer.setData('device-id', def.id));
+      list.appendChild(el);
+    });
+  });
+}
+
+/* ── CANVAS RESIZE ── */
+function resizeCanvas() {
+  const dpr = Math.min(window.devicePixelRatio||1,2);
+  const w = wrap.offsetWidth, h = wrap.offsetHeight;
+  cv.width=w*dpr; cv.height=h*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  draw();
+}
+const resizeObs = new ResizeObserver(resizeCanvas);
+
+/* ── LAYOUT CONSTANTS ── */
+const NODE_W        = 160;  // wider card to fit labels
+const HEADER_H      = 48;   // icon + title area
+const PORT_ROW_H    = 20;   // height per port row
+const PORT_PAD_TOP  = 8;    // padding above first port after header
+const PORT_R        = 5;
+const PORT_LBL_OFF  = 10;   // px gap between port circle edge and label text
+const LABEL_MAX_W   = 62;   // max px for port label (clip after this)
+
+function nodeHeight(n) {
+  return HEADER_H + PORT_PAD_TOP + n.def.ports.length * PORT_ROW_H + 10;
+}
+
+/* portPos: input ports on LEFT edge, output ports on RIGHT edge
+   ports are stacked starting from HEADER_H + PORT_PAD_TOP           */
+function portPos(node, portIdx) {
+  const p = node.def.ports[portIdx];
+  const isOut = p.io === 'out';
+  const x = node.x + (isOut ? NODE_W : 0);
+  const y = node.y + HEADER_H + PORT_PAD_TOP + portIdx * PORT_ROW_H + PORT_ROW_H / 2;
+  return { x, y };
+}
+
+/* ── DRAW ── */
+function draw() {
+  const W = cv.width/(window.devicePixelRatio||1);
+  const H = cv.height/(window.devicePixelRatio||1);
+  ctx.clearRect(0,0,W,H);
+
+  // grid
+  ctx.strokeStyle = 'rgba(155,196,240,.04)';
+  ctx.lineWidth = 1;
+  for(let x=0;x<W;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // connections
+  conns.forEach(c => {
+    const fi = c.fromNode.def.ports.indexOf(c.fromPort);
+    const ti = c.toNode.def.ports.indexOf(c.toPort);
+    if(fi<0||ti<0) return;
+    drawCable(portPos(c.fromNode,fi), portPos(c.toNode,ti), c.ok, c.fromPort.type);
+  });
+
+  // live drag line
+  if (portDrag) {
+    const si = portDrag.node.def.ports.indexOf(portDrag.port);
+    if(si>=0){
+      const sp = portPos(portDrag.node, si);
+      ctx.save();
+      ctx.setLineDash([6,4]);
+      ctx.strokeStyle = PORT_COLORS[portDrag.port.type]||'#fff';
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = .65;
+      drawBezier(sp, {x:portDrag.x, y:portDrag.y});
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+  }
+
+  // nodes (draw all, selected last so it's on top)
+  nodes.filter(n=>n!==selNode).forEach(n=>drawNode(n));
+  if(selNode && nodes.includes(selNode)) drawNode(selNode);
+}
+
+function drawBezier(a, b) {
+  const dx = Math.abs(b.x-a.x)*0.55;
+  ctx.beginPath();
+  ctx.moveTo(a.x,a.y);
+  ctx.bezierCurveTo(a.x+dx,a.y, b.x-dx,b.y, b.x,b.y);
+  ctx.stroke();
+}
+
+function drawCable(a, b, ok, typeA) {
+  ctx.save();
+  const col = ok ? (PORT_COLORS[typeA]||'#9BC4F0') : '#F87171';
+  ctx.strokeStyle = col;
+  ctx.lineWidth = ok ? 2.5 : 1.8;
+  ctx.shadowColor = col;
+  ctx.shadowBlur  = ok ? 5 : 0;
+  if(!ok) ctx.setLineDash([5,4]);
+  drawBezier(a,b);
+  ctx.setLineDash([]);
+  [a,b].forEach(p => {
+    ctx.beginPath(); ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
+    ctx.fillStyle=col; ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawNode(n) {
+  const nh = nodeHeight(n);
+  const isSel = n===selNode;
+  const isDrag = drag&&drag.node===n;
+  ctx.save();
+
+  // drop shadow
+  ctx.shadowColor = isSel ? '#9BC4F0AA' : n.def.color+'55';
+  ctx.shadowBlur  = isDrag ? 24 : isSel ? 16 : 8;
+
+  // card background
+  const grd = ctx.createLinearGradient(n.x,n.y,n.x,n.y+nh);
+  grd.addColorStop(0,'#0D0828'); grd.addColorStop(1,'#07041A');
+  ctx.fillStyle = grd;
+  ctx.strokeStyle = isSel ? '#9BC4F0' : isDrag ? n.def.color : n.def.color+'55';
+  ctx.lineWidth = isSel||isDrag ? 1.5 : 0.8;
+  roundRect(ctx,n.x,n.y,NODE_W,nh,9); ctx.fill(); ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // header band
+  ctx.fillStyle = n.def.color+'22';
+  roundRectTop(ctx, n.x, n.y, NODE_W, HEADER_H, 9);
+  ctx.fill();
+
+  // icon badge
+  ctx.fillStyle = n.def.color+'33';
+  roundRect(ctx, n.x+7, n.y+7, 28, 28, 6); ctx.fill();
+  ctx.fillStyle = n.def.color;
+  ctx.font = 'bold 9px Inter,sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(n.def.icon, n.x+21, n.y+21);
+
+  // device name
+  ctx.fillStyle = '#C8DCFA';
+  ctx.font = '600 10.5px Inter,sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const lbl = n.def.label;
+  ctx.fillText(lbl.length>16 ? lbl.slice(0,15)+'…' : lbl, n.x+42, n.y+17);
+
+  // instance id
+  ctx.fillStyle = 'rgba(155,196,240,.3)';
+  ctx.font = '8.5px Inter,sans-serif';
+  ctx.fillText('#'+n.id, n.x+42, n.y+30);
+
+  // ── DELETE button (top-right, only when selected) ──
+  if (isSel) {
+    const bx = n.x+NODE_W-18, by = n.y+6, br = 8;
+    ctx.fillStyle = 'rgba(248,113,113,.85)';
+    ctx.beginPath(); ctx.arc(bx,by,br,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 10px Inter,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('✕', bx, by+0.5);
+    n._delBtn = {x:bx, y:by, r:br}; // store for hit test
+  } else {
+    n._delBtn = null;
+  }
+
+  // port separator line
+  ctx.strokeStyle = 'rgba(155,196,240,.08)';
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(n.x+4, n.y+HEADER_H);
+  ctx.lineTo(n.x+NODE_W-4, n.y+HEADER_H);
+  ctx.stroke();
+
+  // ── PORTS ──
+  n.def.ports.forEach((p,i) => {
+    const pp = portPos(n,i);
+    const isOut = p.io==='out';
+    const col   = PORT_COLORS[p.type]||'#aaa';
+    const hov   = hovPort&&hovPort.node===n&&hovPort.port===p;
+    const r     = hov ? PORT_R+1.5 : PORT_R;
+
+    // stub line from card edge to port dot
+    ctx.strokeStyle = col+'66'; ctx.lineWidth=0.8;
+    ctx.beginPath();
+    ctx.moveTo(isOut?n.x+NODE_W:n.x, pp.y);
+    ctx.lineTo(pp.x, pp.y);
+    ctx.stroke();
+
+    // port circle
+    ctx.beginPath(); ctx.arc(pp.x,pp.y,r,0,Math.PI*2);
+    ctx.fillStyle = hov ? col : '#0D0828';
+    ctx.strokeStyle = col; ctx.lineWidth=1.5;
+    ctx.fill(); ctx.stroke();
+
+    // ── PORT LABEL — sits INSIDE the card, away from the circle ──
+    ctx.fillStyle = hov ? col : 'rgba(155,196,240,.55)';
+    ctx.font = '8.5px Inter,sans-serif';
+    ctx.textBaseline = 'middle';
+    if (isOut) {
+      // right-side port: label to the LEFT of the circle, ending near circle
+      ctx.textAlign = 'right';
+      ctx.fillText(p.label, pp.x - r - PORT_LBL_OFF, pp.y);
+    } else {
+      // left-side port: label to the RIGHT of the circle, starting inside card
+      ctx.textAlign = 'left';
+      ctx.fillText(p.label, pp.x + r + PORT_LBL_OFF, pp.y);
+    }
+
+    // port type badge (tiny, just inside card edge)
+    const badgeX = isOut ? n.x+NODE_W-4 : n.x+4;
+    ctx.fillStyle = col+'33';
+    ctx.font = '7px Inter,sans-serif';
+    ctx.textAlign = isOut ? 'right' : 'left';
+    ctx.fillText(p.type.toUpperCase(), badgeX, pp.y-7);
+  });
+
+  ctx.restore();
+}
+
+function roundRect(ctx,x,y,w,h,r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+function roundRectTop(ctx,x,y,w,h,r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h);
+  ctx.lineTo(x,y+h);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+/* ── HIT TESTING ── */
+function hitPort(x,y) {
+  for (let n of [...nodes].reverse()) {
+    for (let i=0;i<n.def.ports.length;i++) {
+      const pp=portPos(n,i);
+      if(Math.hypot(x-pp.x,y-pp.y)<PORT_R+6) return {node:n,port:n.def.ports[i]};
+    }
+  }
+  return null;
+}
+function hitNode(x,y) {
+  for(let i=nodes.length-1;i>=0;i--) {
+    const n=nodes[i], nh=nodeHeight(n);
+    if(x>=n.x&&x<=n.x+NODE_W&&y>=n.y&&y<=n.y+nh) return n;
+  }
+  return null;
+}
+function hitDelBtn(x,y) {
+  if(!selNode||!selNode._delBtn) return false;
+  const b=selNode._delBtn;
+  return Math.hypot(x-b.x,y-b.y)<b.r+3;
+}
+
+/* ── MOUSE EVENTS ── */
+function cvCoords(e) {
+  const r=cv.getBoundingClientRect();
+  return {x:e.clientX-r.left, y:e.clientY-r.top};
+}
+
+cv.addEventListener('mousedown', e => {
+  const {x,y}=cvCoords(e);
+  // delete button check first
+  if(hitDelBtn(x,y)) {
+    deleteNode(selNode); return;
+  }
+  // port drag
+  const ph=hitPort(x,y);
+  if(ph){ portDrag={node:ph.node,port:ph.port,x,y}; return; }
+  // node select + drag
+  const nh=hitNode(x,y);
+  if(nh){
+    selNode=nh;
+    drag={node:nh, ox:x-nh.x, oy:y-nh.y};
+    nodes=[...nodes.filter(n=>n!==nh),nh];
+  } else {
+    selNode=null;
+  }
+  draw();
+});
+
+cv.addEventListener('mousemove', e => {
+  const {x,y}=cvCoords(e);
+  if(drag){ drag.node.x=x-drag.ox; drag.node.y=y-drag.oy; draw(); return; }
+  if(portDrag){ portDrag.x=x; portDrag.y=y; draw(); return; }
+  const ph=hitPort(x,y);
+  hovPort = ph?{node:ph.node,port:ph.port}:null;
+  const isDelHov = hitDelBtn(x,y);
+  cv.style.cursor = isDelHov?'pointer': ph?'crosshair': hitNode(x,y)?'move':'default';
+  draw();
+});
+
+cv.addEventListener('mouseup', e => {
+  const {x,y}=cvCoords(e);
+  if(portDrag){
+    const target=hitPort(x,y);
+    if(target&&target.node!==portDrag.node){
+      const fromP=portDrag.port, toP=target.port;
+      const fromOk=fromP.io==='out'||fromP.io==='both';
+      const toOk  =toP.io==='in' ||toP.io==='both';
+      if(!fromOk||!toOk){
+        showToast('✕ ทิศทาง Port ไม่ถูกต้อง (ต้องต่อ Out → In)','err');
+      } else {
+        const dup=conns.find(c=>
+          (c.fromNode===portDrag.node&&c.fromPort===fromP&&c.toNode===target.node&&c.toPort===toP)||
+          (c.fromNode===target.node&&c.fromPort===toP&&c.toNode===portDrag.node&&c.toPort===fromP));
+        if(!dup){
+          const ok=canConnect(fromP.type,toP.type);
+          const msg=connectMsg(fromP.type,toP.type);
+          conns.push({fromNode:portDrag.node,fromPort:fromP,toNode:target.node,toPort:toP,ok,msg});
+          if(ok&&msg) showToast(msg,'ok');
+          else if(!ok) showToast(`✕ ${fromP.type.toUpperCase()} ↔ ${toP.type.toUpperCase()} เชื่อมต่อกันไม่ได้`,'err');
+        } else {
+          showToast('เชื่อมต่อนี้มีอยู่แล้ว','info');
+        }
+      }
+    }
+    portDrag=null; draw(); return;
+  }
+  if(drag){ drag=null; draw(); }
+});
+
+/* ── DELETE NODE ── */
+function deleteNode(n) {
+  if(!n) return;
+  nodes=nodes.filter(nd=>nd!==n);
+  conns=conns.filter(c=>c.fromNode!==n&&c.toNode!==n);
+  if(selNode===n) selNode=null;
+  showToast(`ลบ ${n.def.label} ออกแล้ว`,'info');
+  draw();
+}
+
+/* ── DRAG FROM SIDEBAR ── */
+wrap.addEventListener('dragover', e=>e.preventDefault());
+wrap.addEventListener('drop', e=>{
+  e.preventDefault();
+  const defId=e.dataTransfer.getData('device-id');
+  const def=CATALOGUE.find(d=>d.id===defId);
+  if(!def) return;
+  const r=cv.getBoundingClientRect();
+  const node={id:nextId++,def,label:def.label,
+    x:e.clientX-r.left-NODE_W/2, y:e.clientY-r.top-HEADER_H/2};
+  nodes.push(node);
+  selNode=node;
+  draw();
+  showToast(`เพิ่ม ${def.label} แล้ว`,'info');
+});
+
+/* ── TOAST ── */
+function showToast(msg,type='info') {
+  toast.textContent=msg;
+  toast.className='dg-toast show '+type;
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toast.classList.remove('show'),3200);
+}
+
+/* ── CONTROLS ── */
+window.dgAutoLayout=function() {
+  if(!nodes.length){showToast('ยังไม่มีอุปกรณ์บน Canvas','info');return;}
+  const cols=Math.ceil(Math.sqrt(nodes.length));
+  const gapX=210, gapY=220, startX=70, startY=70;
+  nodes.forEach((n,i)=>{
+    n.x=startX+(i%cols)*gapX;
+    n.y=startY+Math.floor(i/cols)*gapY;
+  });
+  draw();
+};
+window.dgClearConnections=function(){conns=[];draw();showToast('ล้างสายเชื่อมต่อแล้ว','info');};
+window.dgClearAll=function(){nodes=[];conns=[];selNode=null;draw();showToast('ล้างทั้งหมดแล้ว','info');};
+window.dgDeleteSelected=function(){
+  if(selNode) deleteNode(selNode);
+  else showToast('คลิกเลือกอุปกรณ์ก่อน แล้วกด Delete','info');
+};
+
+/* ── KEYBOARD DELETE ── */
+document.addEventListener('keydown', e=>{
+  if((e.key==='Delete'||e.key==='Backspace')&&selNode&&document.getElementById('page-diagram').classList.contains('active')){
+    e.preventDefault(); deleteNode(selNode);
+  }
+});
+
+/* ── INIT ── */
+function initDiagram() {
+  resizeCanvas();
+  resizeObs.observe(wrap);
+  buildSidebar();
+  // default scene
+  const defaults=[
+    {id:'mic-shotgun', x:80,  y:80},
+    {id:'zoom-f6',     x:280, y:60},
+    {id:'rode-wgo2',   x:80,  y:300},
+    {id:'zoom-l8',     x:500, y:150},
+    {id:'monitor-spk', x:730, y:100},
+    {id:'headphone',   x:730, y:330},
+  ];
+  defaults.forEach(d=>{
+    const def=CATALOGUE.find(c=>c.id===d.id);
+    if(!def) return;
+    nodes.push({id:nextId++,def,label:def.label,x:d.x,y:d.y});
+  });
+  draw();
+}
+
+const diagPage=document.getElementById('page-diagram');
+const initObs=new MutationObserver(()=>{
+  if(diagPage.classList.contains('active')&&!diagPage._init){
+    diagPage._init=true;
+    setTimeout(initDiagram,80);
+  }
+});
+initObs.observe(diagPage,{attributes:true,attributeFilter:['class']});
+
+})();
+</script>
+
+</body>
+</html>
