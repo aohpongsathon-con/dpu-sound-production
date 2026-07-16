@@ -1,2 +1,2 @@
 # dpu-sound-production
-Sound in Production lesson for Communication Arts students
+Faculty of Communication Arts, Dhurakij Pundit University
