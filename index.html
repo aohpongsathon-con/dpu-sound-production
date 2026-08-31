@@ -461,7 +461,10 @@ html[data-theme="light"] .theme-toggle .icon-moon{display:block}
 .tier-intro strong{display:block;color:var(--sky2);font-size:13px;line-height:1.5;margin-bottom:3px}
 .tier-intro p{margin:0;color:var(--muted);font-size:11.5px;line-height:1.65;max-width:760px}
 .tier-source{flex-shrink:0;padding:4px 9px;border-radius:5px;background:rgba(52,211,153,.09);
-  border:1px solid rgba(52,211,153,.2);color:#6EE7B7;font-size:9px;font-weight:700;letter-spacing:.6px}
+  border:1px solid rgba(52,211,153,.2);color:#6EE7B7;font-size:9px;font-weight:700;letter-spacing:.6px;
+  text-decoration:none;transition:border-color .2s ease,background .2s ease,color .2s ease}
+.tier-source:hover{border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.15);color:#A7F3D0}
+.tier-source:focus-visible{outline:2px solid #34D399;outline-offset:3px}
 .tier-set{display:grid;grid-template-columns:116px minmax(0,1fr);margin-bottom:10px;
   border:1px solid rgba(155,196,240,.14);border-radius:8px;overflow:hidden;background:rgba(4,2,15,.42)}
 .tier-rank{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;
@@ -1726,79 +1729,79 @@ html[data-theme="light"] .cta-circle{background:rgba(255,255,255,.78)}
     <div class="content-body" style="padding:24px">
       <div class="tier-intro">
         <div>
-          <strong>เลือกจากลักษณะงาน ไม่ได้เลือกจากราคาหรือชื่อรุ่น</strong>
-          <p>ตัวอักษร Tier แสดงระดับความซับซ้อนและความพร้อมของชุด ไม่ใช่คะแนนว่าอุปกรณ์ชิ้นใดดีกว่า ทุกชื่อในหน้านี้มาจากหมวดอุปกรณ์ของบทเรียนเท่านั้น</p>
+          <strong>เลือกจากลักษณะงาน จำนวนผู้ร่วมฉาก และขนาดทีมถ่ายทำ</strong>
+          <p>ตัวอักษร Tier แสดงระดับความซับซ้อนของชุด ไม่ใช่คะแนนคุณภาพอุปกรณ์ หน้านี้ใช้เฉพาะรายการในหมวดเสียงของ Facilities และควรตรวจสอบจำนวนคงเหลือก่อนยืมใช้งานจริง</p>
         </div>
-        <span class="tier-source">15 รายการ · 4 หมวด</span>
+        <a class="tier-source" href="https://aohpongsathon-con.github.io/NitadeCreatorLabDPU/#facilities" target="_blank" rel="noopener noreferrer">อ้างอิง Facilities ↗</a>
       </div>
 
       <section class="tier-set tier-s">
-        <div class="tier-rank"><span>Tier</span><strong>S</strong><small>Film Set</small></div>
+        <div class="tier-rank"><span>Tier</span><strong>S</strong><small>Film Sound</small></div>
         <div class="tier-set-main">
-          <div class="tier-set-head"><div><h2 class="tier-set-title">หนังสั้นหรือภาพยนตร์ที่มีบทสนทนาหลายตัวละคร</h2><p class="tier-set-desc">เน้นคุณภาพเสียงหลักจาก Boom และมี Wireless เป็นเสียงสำรอง</p></div><span class="tier-use-tag">กองเต็มรูปแบบ</span></div>
+          <div class="tier-set-head"><div><h2 class="tier-set-title">หนังสั้นหรือภาพยนตร์ Narrative แบบเต็มกอง</h2><p class="tier-set-desc">เหมาะกับนักแสดง 4–8 คนขึ้นไป มีบทสนทนาหลายตัวละครและต้องบันทึก Boom กับ Wireless แยกช่อง</p></div><span class="tier-use-tag">หลายตัวละคร · Sound Crew</span></div>
           <div class="tier-role-list">
             <div class="tier-role"><div class="tier-role-label">เครื่องบันทึก</div><div class="tier-items"><span class="tier-chip">Zoom F6</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">เสียงหลัก</div><div class="tier-items"><span class="tier-chip">Mic Shotgun</span><span class="tier-chip">Boom Pole</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">เสียงสำรอง</div><div class="tier-items"><span class="tier-chip">Sennheiser</span><span class="tier-chip">Tentacle Sync Lavalier</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">ถ่ายภายนอก</div><div class="tier-items"><span class="tier-chip">RØDE Blimp</span><span class="tier-chip">Windshield / Dead Cat</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">Boom หลัก</div><div class="tier-items"><span class="tier-chip">RØDE NTG3 (Shotgun Mic)</span><span class="tier-chip">RØDE PG2-R Shock Mount</span><span class="tier-chip">RØDE Boompole</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">Wireless สำรอง</div><div class="tier-items"><span class="tier-chip">Sennheiser EW (Bodypack Set)</span><span class="tier-chip">Tentacle Sync Lavalier</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">ภายนอกอาคาร</div><div class="tier-items"><span class="tier-chip">RØDE Blimp</span><span class="tier-chip">Windshield / Dead Cat</span></div></div>
           </div>
-          <p class="tier-why"><strong>เหตุผล:</strong> Zoom F6 รองรับ 6 อินพุตและ 32-bit Float จึงเหมาะกับฉากที่ต้องรับหลายแหล่งเสียง พร้อมใช้ Boom เป็นเสียงหลักและ Wireless เป็นตัวสำรอง</p>
+          <p class="tier-why"><strong>เหตุผล:</strong> Zoom F6 รองรับ 6 อินพุตและ 32-bit Float เหมาะกับการแยก Boom และ Wireless หลายตัวละคร โดยใช้ NTG3 เป็นเสียงหลักและ Bodypack เป็นเสียงสำรองของนักแสดง</p>
         </div>
       </section>
 
       <section class="tier-set tier-a">
-        <div class="tier-rank"><span>Tier</span><strong>A</strong><small>Field Work</small></div>
+        <div class="tier-rank"><span>Tier</span><strong>A</strong><small>Documentary</small></div>
         <div class="tier-set-main">
-          <div class="tier-set-head"><div><h2 class="tier-set-title">สารคดีหรือถ่ายภาคสนามที่ต้องเคลื่อนที่ตามตัวละคร</h2><p class="tier-set-desc">ต้องพกพาได้และรักษาเสียงต่อเนื่องขณะผู้ถ่ายกับตัวละครเคลื่อนที่</p></div><span class="tier-use-tag">เคลื่อนที่เร็ว</span></div>
+          <div class="tier-set-head"><div><h2 class="tier-set-title">สารคดีภาคสนามและงานติดตามตัวละคร</h2><p class="tier-set-desc">เหมาะกับผู้ร่วมฉาก 1–3 คน ต้องเคลื่อนที่เร็วและรักษาเสียงต่อเนื่องในสภาพแวดล้อมที่คาดเดาไม่ได้</p></div><span class="tier-use-tag">1–3 คน · Run &amp; Gun</span></div>
           <div class="tier-role-list">
             <div class="tier-role"><div class="tier-role-label">เครื่องบันทึก</div><div class="tier-items"><span class="tier-chip">Zoom F4</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">เสียงหลัก</div><div class="tier-items"><span class="tier-chip">Mic Shotgun</span><span class="tier-chip">Boom Pole</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">ติดตัวผู้พูด</div><div class="tier-items"><span class="tier-chip">DJI Mic 3</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">กันลม</div><div class="tier-items"><span class="tier-chip">RØDE Blimp</span><span class="tier-chip">Windshield / Dead Cat</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">Boom ภาคสนาม</div><div class="tier-items"><span class="tier-chip">RØDE NTG3 (Shotgun Mic)</span><span class="tier-chip">RØDE PG2-R Shock Mount</span><span class="tier-chip">RØDE Blimp</span><span class="tier-chip">RØDE Boompole</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">ติดตัวผู้พูด</div><div class="tier-items"><span class="tier-chip">Sennheiser EW (Bodypack Set)</span><span class="tier-chip">Tentacle Sync Lavalier</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">ชุดคล่องตัว</div><div class="tier-items"><span class="tier-chip alt">DJI Mic 3</span><span class="tier-chip">Windshield / Dead Cat</span></div></div>
           </div>
-          <p class="tier-why"><strong>เหตุผล:</strong> Zoom F4 เหมาะกับงาน Professional Film และมี Timecode ส่วน DJI Mic 3 ช่วยรับเสียงจากตัวละครที่อยู่ห่างหรือเคลื่อนออกจากระยะ Boom</p>
+          <p class="tier-why"><strong>เหตุผล:</strong> Zoom F4 มี Timecode และเหมาะกับงานภาคสนาม ใช้ Boom เก็บบทสนทนาและบรรยากาศ พร้อม Bodypack หรือ DJI Mic 3 รักษาเสียงเมื่อผู้พูดเคลื่อนออกจากระยะ Boom</p>
         </div>
       </section>
 
       <section class="tier-set tier-b">
         <div class="tier-rank"><span>Tier</span><strong>B</strong><small>Interview</small></div>
         <div class="tier-set-main">
-          <div class="tier-set-head"><div><h2 class="tier-set-title">สัมภาษณ์ 1–2 คนหรือคอนเทนต์องค์กร</h2><p class="tier-set-desc">เซ็ตไม่ใหญ่ ตั้งค่าเร็ว และมีไฟล์เสียงแยกสำหรับผู้พูดแต่ละคน</p></div><span class="tier-use-tag">กองขนาดเล็ก</span></div>
+          <div class="tier-set-head"><div><h2 class="tier-set-title">สัมภาษณ์ 1–2 คนและวิดีโอองค์กร</h2><p class="tier-set-desc">เหมาะกับสถานที่ควบคุมได้ ตั้งระบบเร็ว และต้องการเสียงแยกของผู้พูดแต่ละคนพร้อม Boom สำรอง</p></div><span class="tier-use-tag">ผู้พูด 1–2 คน</span></div>
           <div class="tier-role-list">
             <div class="tier-role"><div class="tier-role-label">เครื่องบันทึก</div><div class="tier-items"><span class="tier-chip">Zoom H6</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">Wireless หลัก</div><div class="tier-items"><span class="tier-chip">RØDE Wireless GO II</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">Lavalier</div><div class="tier-items"><span class="tier-chip">Tentacle Sync Lavalier</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">ตัวเลือกประหยัด</div><div class="tier-items"><span class="tier-chip alt">Saramonic Blink 500 Pro</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">Wireless หลัก</div><div class="tier-items"><span class="tier-chip">RØDE Wireless GO II</span><span class="tier-chip">Tentacle Sync Lavalier</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">Boom สำรอง</div><div class="tier-items"><span class="tier-chip">RØDE NTG3 (Shotgun Mic)</span><span class="tier-chip">RØDE PG2-R Shock Mount</span><span class="tier-chip">RØDE Boompole</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">ตัวเลือก</div><div class="tier-items"><span class="tier-chip alt">Saramonic Blink 500 Pro</span><span class="tier-chip alt">BOYA BY-M1S</span></div></div>
           </div>
-          <p class="tier-why"><strong>เหตุผล:</strong> Zoom H6 มี 4 อินพุตเพียงพอกับงานสัมภาษณ์ขนาดเล็ก ขณะที่ RØDE Wireless GO II เหมาะกับงาน Creator และมีการบันทึกภายใน</p>
+          <p class="tier-why"><strong>เหตุผล:</strong> Zoom H6 มี 4 อินพุตเพียงพอสำหรับผู้พูด 1–2 คนและ Boom สำรอง ส่วน Wireless GO II ช่วยแยกเสียงผู้พูดและลดข้อจำกัดเรื่องระยะวางไมโครโฟน</p>
         </div>
       </section>
 
       <section class="tier-set tier-c">
-        <div class="tier-rank"><span>Tier</span><strong>C</strong><small>Studio Talk</small></div>
+        <div class="tier-rank"><span>Tier</span><strong>C</strong><small>Multi Talk</small></div>
         <div class="tier-set-main">
-          <div class="tier-set-head"><div><h2 class="tier-set-title">รายการพูดคุยหลายคนหรือสตูดิโอขนาดเล็ก</h2><p class="tier-set-desc">ต้องการอินพุตหลายช่องและควบคุมระดับเสียงระหว่างบันทึกได้ทันที</p></div><span class="tier-use-tag">หลายผู้พูด</span></div>
+          <div class="tier-set-head"><div><h2 class="tier-set-title">รายการพูดคุยและ Podcast หลายคน</h2><p class="tier-set-desc">เหมาะกับผู้พูด 3–6 คนในจุดคงที่ ต้องควบคุมระดับเสียงหลายช่องและบันทึกแยกแทร็กพร้อมกัน</p></div><span class="tier-use-tag">ผู้พูด 3–6 คน</span></div>
           <div class="tier-role-list">
             <div class="tier-role"><div class="tier-role-label">Mixer / Recorder</div><div class="tier-items"><span class="tier-chip">Zoom L8</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">Wireless</div><div class="tier-items"><span class="tier-chip">DJI Mic 3</span><span class="tier-chip">Sennheiser</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">Lavalier</div><div class="tier-items"><span class="tier-chip">Tentacle Sync Lavalier</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">Wireless UHF</div><div class="tier-items"><span class="tier-chip">Sennheiser EW (Bodypack Set)</span><span class="tier-chip">Tentacle Sync Lavalier</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">Wireless Digital</div><div class="tier-items"><span class="tier-chip">DJI Mic 3</span><span class="tier-chip">RØDE Wireless GO II</span></div></div>
             <div class="tier-role"><div class="tier-role-label">ตัวเลือกพกพา</div><div class="tier-items"><span class="tier-chip alt">Zoom H8</span></div></div>
           </div>
-          <p class="tier-why"><strong>เหตุผล:</strong> Zoom L8 รวม Mixer และ Recorder พร้อม 8 อินพุต เหมาะกับการคุมหลายคนในจุดเดียว ส่วน Zoom H8 เป็นตัวเลือกแบบ 6 อินพุตเมื่อไม่ต้องใช้ช่องจำนวนมากเท่า L8</p>
+          <p class="tier-why"><strong>เหตุผล:</strong> Zoom L8 มี 8 อินพุตและควบคุมระดับเสียงระหว่างบันทึกได้ เหมาะกับผู้พูดหลายคน ส่วน H8 เป็นตัวเลือกพกพาเมื่อจำนวนอินพุตที่ต้องใช้ลดลง</p>
         </div>
       </section>
 
       <section class="tier-set tier-d">
-        <div class="tier-rank"><span>Tier</span><strong>D</strong><small>Student Kit</small></div>
+        <div class="tier-rank"><span>Tier</span><strong>D</strong><small>Solo Creator</small></div>
         <div class="tier-set-main">
-          <div class="tier-set-head"><div><h2 class="tier-set-title">แบบฝึกหัดนักศึกษาหรือ Creator งบจำกัด</h2><p class="tier-set-desc">เริ่มจากอุปกรณ์ที่เข้าใจง่ายและฝึกได้ทั้ง Boom, Wireless และ Lavalier</p></div><span class="tier-use-tag">ชุดเริ่มต้น</span></div>
+          <div class="tier-set-head"><div><h2 class="tier-set-title">Creator คนเดียว แบบฝึกหัด และงานเบื้องหลัง</h2><p class="tier-set-desc">เหมาะกับผู้พูด 1–2 คน เน้นพกง่าย ตั้งค่าเร็ว และใช้จำนวนอุปกรณ์น้อย</p></div><span class="tier-use-tag">ผู้พูด 1–2 คน · ชุดเล็ก</span></div>
           <div class="tier-role-list">
-            <div class="tier-role"><div class="tier-role-label">เครื่องบันทึก</div><div class="tier-items"><span class="tier-chip">Zoom H6</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">Wireless</div><div class="tier-items"><span class="tier-chip">Saramonic Blink 500 Pro</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">Lavalier</div><div class="tier-items"><span class="tier-chip">BOYA BY-M1S</span></div></div>
-            <div class="tier-role"><div class="tier-role-label">ฝึก Boom</div><div class="tier-items"><span class="tier-chip">Mic Shotgun</span><span class="tier-chip">Boom Pole</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">Wireless หลัก</div><div class="tier-items"><span class="tier-chip">DJI Mic 3</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">ตัวเลือกประหยัด</div><div class="tier-items"><span class="tier-chip alt">Saramonic Blink 500 Pro</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">Lavalier สาย</div><div class="tier-items"><span class="tier-chip">BOYA BY-M1S</span></div></div>
+            <div class="tier-role"><div class="tier-role-label">บันทึกแยก</div><div class="tier-items"><span class="tier-chip alt">Zoom H6</span></div></div>
           </div>
-          <p class="tier-why"><strong>เหตุผล:</strong> เป็นชุดที่ครอบคลุมพื้นฐานการรับเสียงหลายรูปแบบ นักศึกษาสามารถเปรียบเทียบข้อดีและข้อจำกัดของ Boom, Wireless และ Lavalier ได้ในงานเดียว</p>
+          <p class="tier-why"><strong>เหตุผล:</strong> DJI Mic 3 ตั้งค่าได้รวดเร็วและเหมาะกับผู้ถ่ายคนเดียว ส่วน BOYA BY-M1S ใช้เป็นทางเลือกแบบสาย และ H6 เพิ่มได้เมื่อจำเป็นต้องบันทึกเป็นไฟล์เสียงแยกต่างหาก</p>
         </div>
       </section>
     </div>
