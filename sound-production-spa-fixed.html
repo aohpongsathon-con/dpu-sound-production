@@ -677,6 +677,41 @@ html[data-theme="light"] .cta-circle{background:rgba(255,255,255,.78)}
 }
 #waveTransition.wt-active::before{opacity:1}
 </style>
+<style id="srcLabStyles">
+/* Sample-rate conversion teaching model */
+.src-lab{margin:28px 0;padding:24px 0;border-block:1px solid var(--border2);color:var(--text);--src-original:#fb7185;--src-converted:#38bdf8}
+html[data-theme="light"] .src-lab{--src-original:#be123c;--src-converted:#0369a1}
+.src-heading h2{font-size:24px;line-height:1.65;letter-spacing:0;margin:4px 0 8px;overflow-wrap:anywhere}
+.src-heading p,.src-explanations p,.src-takeaway{font-size:14px;line-height:1.85;color:var(--text2)}
+.src-controls{display:flex;flex-wrap:wrap;align-items:end;gap:14px;margin:20px 0 12px}
+.src-controls label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--text2)}
+.src-controls select{min-height:44px;min-width:145px;padding:8px 32px 8px 12px;border:1px solid var(--border2);border-radius:6px;background:var(--card2);color:var(--text);font-size:15px}
+.src-controls .src-check{flex-direction:row;align-items:center;min-height:44px;gap:9px;max-width:100%}
+.src-check input{width:18px;height:18px;flex-shrink:0;accent-color:var(--sky)}
+.src-controls :focus-visible,.src-reference a:focus-visible{outline:2px solid var(--sky);outline-offset:4px}
+.src-direction{font-size:24px;line-height:44px}
+.src-status{font-size:14px;line-height:1.8;min-height:26px;color:var(--sky2);margin:10px 0 16px}
+.src-plots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.src-plots figure{margin:0;min-width:0}
+.src-plots figcaption{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;font-size:14px;line-height:1.7;margin-bottom:8px}
+.src-plots figcaption span{font-size:12px;color:var(--text2)}
+.src-plots canvas{display:block;width:100%;height:224px;background:var(--card1);border:1px solid var(--border2);border-radius:6px}
+.src-legend{display:flex;flex-wrap:wrap;gap:10px 20px;margin:14px 0 8px;font-size:12px;color:var(--text2)}
+.src-legend span{display:flex;align-items:center;gap:7px}
+.src-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.src-original{background:var(--src-original)}.src-converted{background:var(--src-converted)}.src-wave{background:var(--sky)}
+.src-caption,.src-reference{font-size:12px;line-height:1.8;color:var(--text2)}
+.src-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:20px 0;padding:16px 0;border-block:1px solid var(--border2)}
+.src-metrics dt{font-size:12px;color:var(--text2);line-height:1.8}
+.src-metrics dd{font-size:16px;color:var(--sky2);font-weight:700;line-height:1.8;overflow-wrap:anywhere;margin:3px 0 0}
+.src-explanations{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.src-explanations h3{font-size:16px;line-height:1.8;margin-bottom:8px}
+.src-explanations p+p{margin-top:10px}
+.src-takeaway{margin:20px 0 12px;padding-left:14px;border-left:3px solid var(--sky)}
+.src-reference a{color:var(--sky);text-underline-offset:3px}
+@media(max-width:700px){.src-plots,.src-explanations{grid-template-columns:1fr}.src-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.src-heading h2{font-size:21px}.src-controls{gap:10px}.src-controls select{min-width:115px}.src-controls .src-check{width:100%}.src-lab{padding:20px 0}}
+
+</style>
 </head>
 <body>
 
@@ -1082,6 +1117,40 @@ html[data-theme="light"] .cta-circle{background:rgba(255,255,255,.78)}
     </div>
     <!-- end visualizer -->
 
+    <section class="src-lab" id="srcLab" aria-labelledby="srcHeading">
+      <header class="src-heading">
+        <p class="page-eyebrow">ทดลองแปลง Sample Rate</p>
+        <h2 id="srcHeading">44.1 kHz แปลงเป็น 96 kHz ได้ไหม?</h2>
+        <p>ได้ โดยคำนวณค่าตัวอย่างบนช่วงเวลาใหม่จากข้อมูลเสียงเดิม เรียกว่า Sample Rate Conversion</p>
+      </header>
+      <div class="src-controls">
+        <label>ต้นทาง<select id="srcFrom" aria-label="Sample Rate ต้นทาง"><option value="44100">44.1 kHz</option><option value="48000">48 kHz</option><option value="88200">88.2 kHz</option><option value="96000">96 kHz</option><option value="192000">192 kHz</option></select></label>
+        <span class="src-direction" aria-hidden="true">&#8594;</span>
+        <label>ปลายทาง<select id="srcTo" aria-label="Sample Rate ปลายทาง"><option value="44100">44.1 kHz</option><option value="48000">48 kHz</option><option value="88200">88.2 kHz</option><option value="96000" selected>96 kHz</option><option value="192000">192 kHz</option></select></label>
+        <label class="src-check"><input id="srcOverlay" type="checkbox" checked>ซ้อนจุดต้นฉบับในกราฟหลังแปลง</label>
+      </div>
+      <p class="src-status" id="srcStatus" role="status" aria-live="polite"></p>
+      <div class="src-plots">
+        <figure><figcaption><strong id="srcBeforeTitle">ต้นฉบับ 44.1 kHz</strong><span id="srcBeforeCount"></span></figcaption><canvas id="srcBefore" role="img" aria-label="กราฟคลื่นต้นฉบับและจุดตัวอย่าง"></canvas></figure>
+        <figure><figcaption><strong id="srcAfterTitle">หลังแปลง 96 kHz</strong><span id="srcAfterCount"></span></figcaption><canvas id="srcAfter" role="img" aria-label="กราฟคลื่นหลังแปลงและจุดตัวอย่างที่คำนวณใหม่"></canvas></figure>
+      </div>
+      <div class="src-legend"><span><i class="src-original"></i>จุดต้นฉบับ</span><span><i class="src-converted"></i>จุดหลังแปลง</span><span><i class="src-wave"></i>คลื่นที่สร้างกลับจากข้อมูลเดิม</span></div>
+      <p class="src-caption">แกนตั้ง: Amplitude (สัดส่วนระดับสัญญาณ) · แกนนอน: เวลา 0–1 ms เท่ากันทั้งสองกราฟ<br>แบบจำลองอุดมคติของคลื่น 2 kHz + 5 kHz ซึ่งต่ำกว่า Nyquist ของทุกค่าที่เลือก จุดถี่ขึ้นไม่ได้แปลว่าคลื่นเสียงเดิมมีรายละเอียดเพิ่มขึ้น แบบจำลองนี้ไม่ได้แปลงไฟล์เสียงจริง</p>
+      <dl class="src-metrics" aria-label="ผลของการแปลง">
+        <div><dt>จุดตัวอย่างต่อวินาที</dt><dd id="srcSamples"></dd></div>
+        <div><dt>อัตราส่วนจำนวน samples</dt><dd id="srcRatio"></dd></div>
+        <div><dt>ความยาว / Pitch</dt><dd>เท่าเดิม / เท่าเดิม</dd></div>
+        <div><dt>PCM 1 นาที · Stereo · 24-bit</dt><dd id="srcSize"></dd></div>
+      </dl>
+      <div class="src-explanations">
+        <div><h3 id="srcHowTitle">เมื่อ Upsample เกิดอะไรขึ้น?</h3><p id="srcHow"></p><p id="srcBandwidth"></p></div>
+        <div><h3>คุณภาพและการนำไปใช้</h3><p id="srcAdvice"></p><p>ใช้ตัวแปลง Sample Rate ที่มีคุณภาพ การกรองและการปัดเศษอาจทำให้ค่าตัวอย่างเปลี่ยนเล็กน้อย จึงไม่ควรสรุปว่าทุกวิธีให้ผลเหมือนกันทุกบิต</p></div>
+      </div>
+      <p class="src-takeaway"><strong>จำให้ขึ้นใจ:</strong> Upsample ไม่ใช่การบันทึกใหม่ที่ Sample Rate สูงกว่า ไม่กู้รายละเอียดที่ไม่เคยบันทึก และไม่แก้เสียงแตกหรือ noise เดิม ส่วนการเปลี่ยนแค่ตัวเลข Sample Rate โดยไม่ Resample จะทำให้ความเร็ว ความยาว และ Pitch เปลี่ยน</p>
+      <p class="src-reference">หลักการ: <a href="https://www.mathworks.com/help/signal/ug/signal-resampling.html" target="_blank" rel="noopener noreferrer">Signal Resampling</a> · <a href="https://www.mathworks.com/help/ident/ug/resampling-data.html" target="_blank" rel="noopener noreferrer">Resampling Data</a></p>
+    </section>
+
+
     <div class="content-body" style="margin-top:20px">
       <div class="content-section">
         <h3>Sample Rate ที่นิยมใช้</h3>
@@ -1090,13 +1159,13 @@ html[data-theme="light"] .cta-circle{background:rgba(255,255,255,.78)}
           <tr><td><strong>44.1 kHz</strong></td><td>44,100 ครั้ง/วินาที</td><td>มาตรฐาน CD Audio, ฟังเพลงทั่วไป</td></tr>
           <tr class="highlight"><td><strong>48 kHz ✅</strong></td><td>48,000 ครั้ง/วินาที</td><td>มาตรฐานวิดีโอ ภาพยนตร์ บรอดแคสต์ — แนะนำสำหรับงาน Production</td></tr>
           <tr><td><strong>96 kHz</strong></td><td>96,000 ครั้ง/วินาที</td><td>Professional Recording, Sound Design</td></tr>
-          <tr><td><strong>192 kHz</strong></td><td>192,000 ครั้ง/วินาที</td><td>งานระดับ Mastering, ให้รายละเอียดสูงสุดเมื่อดัดแปลง</td></tr>
+          <tr><td><strong>192 kHz</strong></td><td>192,000 ครั้ง/วินาที</td><td>งานเฉพาะทางที่ต้องการอัตราสูง ไม่รับประกันว่าเสียงดีกว่าเสมอ</td></tr>
         </table>
       </div>
       <div class="content-section">
         <h3>ทำไมต้อง 48 kHz สำหรับภาพยนตร์?</h3>
-        <p>มาตรฐาน SMPTE และ EBU กำหนดให้งาน Video Production ใช้ 48 kHz เพื่อให้ไฟล์เสียงซิงก์กับ Frame Rate ของวิดีโอได้อย่างแม่นยำ — กล้อง, NLE Software และ Audio Workstation ทุกตัวรองรับ 48 kHz เป็น Default</p>
-        <p>เมื่อนำ Sample Rate 44.1 kHz ไปรวมกับไทม์โค้ดวิดีโอ จะเกิด Pull-up/Pull-down ที่อาจทำให้เสียงเหลื่อมกับภาพในระยะยาว</p>
+        <p>48 kHz เป็นค่าที่ใช้แพร่หลายในงานวิดีโอและภาพยนตร์ ควรตั้งให้ตรงกับข้อกำหนดของโปรเจกต์และอุปกรณ์เพื่อลดขั้นตอนการแปลง</p>
+        <p>ไฟล์ 44.1 kHz สามารถ Resample เป็น 48 kHz โดยคงความยาวและ Pitch เดิมได้ การใช้คนละ Sample Rate ไม่ได้ทำให้เสียงเหลื่อมโดยอัตโนมัติ และการ Resample ต่างจากการเปลี่ยนความเร็วด้วย Pull-up/Pull-down</p>
       </div>
     </div>
   </div>
@@ -5884,5 +5953,77 @@ requestAnimationFrame(() => {
 })();
 </script>
 
+<script id="srcLabScript">
+/* Educational ideal band-limited signal, not a production audio resampler. */
+(function(){
+  'use strict';
+  const lab=document.getElementById('srcLab');
+  if(!lab)return;
+  const el=id=>document.getElementById(id);
+  const from=el('srcFrom'),to=el('srcTo'),overlay=el('srcOverlay');
+  const rates=[44100,48000,88200,96000,192000];
+  const format=n=>n.toLocaleString('en-US',{maximumFractionDigits:2});
+  const khz=n=>format(n/1000)+' kHz';
+  const wave=t=>.58*Math.sin(2*Math.PI*2000*t)+.22*Math.sin(2*Math.PI*5000*t+.4);
+  const gcd=(a,b)=>b?gcd(b,a%b):a;
+  let frame=0;
+  function draw(canvas,rate,sourceRate,showSource){
+    const width=canvas.clientWidth,height=canvas.clientHeight;
+    if(!width||!height)return;
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
+    const ctx=canvas.getContext('2d');if(!ctx)return;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    const style=getComputedStyle(lab),color=name=>style.getPropertyValue(name).trim();
+    const left=36,right=width-14,top=20,bottom=height-32;
+    const x=t=>left+t/.001*(right-left),y=v=>top+(1-v)*(bottom-top)/2;
+    ctx.font='11px Inter, sans-serif';ctx.lineWidth=1;
+    for(let k=0;k<=4;k++){
+      const t=k*.00025,xx=x(t);
+      ctx.strokeStyle=color('--border2');ctx.beginPath();ctx.moveTo(xx,top);ctx.lineTo(xx,bottom);ctx.stroke();
+      ctx.fillStyle=color('--text2');ctx.textAlign=k===4?'right':k===0?'left':'center';ctx.fillText(format(k*.25),xx,height-12);
+    }
+    [-1,0,1].forEach(v=>{ctx.strokeStyle=color('--border2');ctx.beginPath();ctx.moveTo(left,y(v));ctx.lineTo(right,y(v));ctx.stroke();ctx.fillStyle=color('--text2');ctx.textAlign='right';ctx.fillText(String(v),left-8,y(v)+4);});
+    ctx.strokeStyle=color('--sky');ctx.lineWidth=1.5;ctx.beginPath();
+    for(let i=0;i<=600;i++){const t=i/600*.001;i?ctx.lineTo(x(t),y(wave(t))):ctx.moveTo(x(t),y(wave(t)));}ctx.stroke();
+    function dots(sampleRate,ink,hollow){
+      ctx.strokeStyle=ink;ctx.fillStyle=ink;ctx.lineWidth=1.5;
+      // Half-open interval [0, 1 ms): one dot per actual sample instant.
+      for(let n=0;n<Math.ceil(sampleRate*.001);n++){
+        const t=n/sampleRate;ctx.beginPath();ctx.arc(x(t),y(wave(t)),hollow?3.8:2.3,0,2*Math.PI);hollow?ctx.stroke():ctx.fill();
+      }
+    }
+    dots(rate,color(canvas.id==='srcBefore'?'--src-original':'--src-converted'),false);
+    if(showSource)dots(sourceRate,color('--src-original'),true);
+  }
+  function render(){
+    frame=0;
+    const a=Number(from.value),b=Number(to.value);if(!rates.includes(a)||!rates.includes(b))return;
+    const up=b>a,down=b<a,ratio=b/a,d=gcd(a,b);
+    const set=(id,text)=>{el(id).textContent=text;};
+    set('srcStatus',up?'Upsample: เพิ่มจุดตัวอย่างที่คำนวณจากข้อมูลเดิม':down?'Downsample: กรองความถี่สูงก่อนลดจำนวนจุดตัวอย่าง':'ค่าเท่ากัน: ไม่ต้องแปลง Sample Rate');
+    set('srcBeforeTitle','ต้นฉบับ '+khz(a));set('srcAfterTitle','หลังแปลง '+khz(b));
+    set('srcBeforeCount',Math.ceil(a*.001)+' จุดในช่วง 1 ms');set('srcAfterCount',Math.ceil(b*.001)+' จุดในช่วง 1 ms');
+    set('srcSamples',format(a)+' → '+format(b));set('srcRatio',format(ratio)+' เท่า ('+(b/d)+':'+(a/d)+')');
+    const mb=rate=>format(rate*60*2*3/1000000);
+    set('srcSize',mb(a)+' → '+mb(b)+' MB');
+    set('srcHowTitle',up?'เมื่อ Upsample เกิดอะไรขึ้น?':down?'เมื่อ Downsample เกิดอะไรขึ้น?':'เมื่อใช้ค่าเดิมเกิดอะไรขึ้น?');
+    set('srcHow',up?'ตัวแปลงสร้างค่าตัวอย่างบนตารางเวลาใหม่ด้วย Interpolation และการกรอง ไม่ได้แค่ทำสำเนาหรือแทรกจุดตรงกลางเสมอไป เช่น 44.1 → 96 kHz มีอัตราส่วน 320:147 จุดส่วนใหญ่จึงอยู่คนละเวลากับต้นฉบับ':down?'ต้องใช้ตัวกรอง Anti-aliasing ลดความถี่ที่สูงเกินขอบเขตปลายทางก่อนคำนวณจุดใหม่ เพื่อป้องกันเสียงความถี่สูงพับกลับเป็นความถี่ผิด กราฟนี้ใช้คลื่นต่ำกว่าขอบเขตทั้งสองจึงยังมีรูปร่างเดิม':'จำนวนจุดและตารางเวลาตรงกันอยู่แล้ว ไม่มีประโยชน์จากการ Resample ซ้ำโดยไม่จำเป็น');
+    set('srcBandwidth','Nyquist ต้นทาง '+khz(a/2)+' → ปลายทาง '+khz(b/2)+'. ข้อมูลเสียงเดิมที่รักษาได้มีขอบเขตเชิงทฤษฎีต่ำกว่า '+khz(Math.min(a,b)/2)+(up?' แม้ไฟล์ปลายทางจะรองรับความถี่สูงกว่า แต่ไม่มีข้อมูลเสียงใหม่ในย่านนั้น':'')+'; ตัวกรองจริงมีช่วงเปลี่ยนผ่านจึงไม่ใช่ขอบตัดสมบูรณ์ที่ Nyquist');
+    set('srcAdvice',up?'คุณภาพไม่ดีขึ้นโดยอัตโนมัติ เมื่อแปลงได้ดีเสียงควรใกล้เคียงต้นฉบับ ใช้เมื่อต้องให้ตรงกับโปรเจกต์หรือขั้นตอนประมวลผลที่ต้องการอัตรานี้ ไฟล์ PCM ใหญ่ขึ้น '+format(ratio)+' เท่าเมื่อความยาว จำนวนช่อง และ Bit Depth คงเดิม':down?'เหมาะกับการส่งงานที่กำหนด Sample Rate ต่ำกว่า ไฟล์ PCM เล็กลง แต่ความถี่เหนือขอบเขตใหม่จะถูกตัดทิ้งและ Upsample กลับก็เรียกคืนไม่ได้ คุณภาพที่ได้ขึ้นกับต้นฉบับและตัวกรอง':'คง Sample Rate เดิมได้เมื่อข้อกำหนดของงานรองรับ ขนาดข้อมูล PCM เท่าเดิม โดยไม่รวม header หรือการบีบอัด');
+    draw(el('srcBefore'),a,a,false);draw(el('srcAfter'),b,a,overlay.checked);
+    el('srcBefore').setAttribute('aria-label','ต้นฉบับ '+khz(a)+' มี '+Math.ceil(a*.001)+' จุดในช่วง 0 ถึงก่อน 1 ms');
+    el('srcAfter').setAttribute('aria-label','หลังแปลง '+khz(b)+' มี '+Math.ceil(b*.001)+' จุด คลื่น 2 และ 5 kHz ยังคงเดิม');
+  }
+  function schedule(){if(!frame)frame=requestAnimationFrame(render);}
+  [from,to,overlay].forEach(control=>control.addEventListener('change',schedule));
+  if(window.ResizeObserver)new ResizeObserver(schedule).observe(lab);
+  else window.addEventListener('resize',schedule);
+  new MutationObserver(schedule).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  new MutationObserver(schedule).observe(el('page-basics-samplerate'),{attributes:true,attributeFilter:['class']});
+  render();
+})();
+
+</script>
 </body>
 </html>
