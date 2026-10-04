@@ -1171,30 +1171,32 @@ html[data-theme="light"] .src-lab{--src-original:#be123c;--src-converted:#0369a1
     <section class="src-lab bdc-lab" id="srrLab" aria-labelledby="srrHeading">
       <header class="src-heading">
         <p class="page-eyebrow">แปลง Sample Rate VS บันทึกตั้งแต่ต้น</p>
-        <h2 id="srrHeading">44.1 → 48 kHz ต่างจากการอัดที่อัตราสูงตั้งแต่ต้นอย่างไร?</h2>
-        <p>ฝั่งซ้ายคงที่: อัด 44.1 kHz แล้วแปลงเป็น 48 kHz ฝั่งขวาเลือกอัตราบันทึกต้นฉบับได้ ทั้งสองรับสัญญาณก่อนบันทึกเดียวกันและเปรียบเทียบช่วงเวลาเดียวกัน</p>
+        <h2 id="srrHeading">แปลงจาก 44.1 kHz เทียบกับอัดที่อัตราปลายทางตั้งแต่ต้น</h2>
+        <p>เลือกอัตราเดียวสำหรับทั้งสองฝั่ง: ซ้ายอัด 44.1 kHz แล้วแปลงเป็นอัตราที่เลือก ขวาอัดที่อัตรานั้นตั้งแต่ต้น ใช้สัญญาณก่อนบันทึกเดียวกัน ช่วงเวลาเดียวกัน และจำนวนจุดเท่ากัน เพื่อดูความต่างของข้อมูลเสียง</p>
       </header>
       <div class="src-controls">
-        <label>อัตราที่อัดตั้งแต่ต้น<select id="srrOriginal" aria-label="Sample Rate ต้นฉบับที่ใช้เปรียบเทียบ"><option value="48000">48 kHz Original</option><option value="96000">96 kHz Original</option><option value="192000">192 kHz Original</option></select></label>
+        <label>Sample Rate ปลายทางทั้งสองฝั่ง<select id="srrOriginal" aria-label="Sample Rate ปลายทางทั้งสองฝั่ง"><option value="48000">48 kHz</option><option value="96000">96 kHz</option><option value="192000">192 kHz</option></select></label>
         <label>ความถี่ทดสอบที่เพิ่มจากเสียงฐาน 2 kHz<select id="srrTone" aria-label="ความถี่เสียงทดสอบ"><option value="10000">10 kHz · ต่ำกว่า Nyquist ทุกอัตรา</option><option value="18000">18 kHz · ย่านเสียงสูง</option><option value="23000" selected>23 kHz · เกินขอบเขต 44.1 kHz</option><option value="30000">30 kHz · เกินขอบเขต 48 kHz</option><option value="60000">60 kHz · เกินขอบเขต 96 kHz</option></select></label>
       </div>
       <p class="src-status" id="srrStatus" role="status" aria-live="polite"></p>
       <div class="src-plots">
-        <figure><figcaption><strong>อัด 44.1 → แปลงเป็น 48 kHz</strong><span>48 จุดในช่วง 1 ms</span></figcaption><canvas id="srrConverted" role="img" aria-label="กราฟต้นฉบับ 44.1 kHz ที่แปลงเป็น 48 kHz"></canvas></figure>
+        <figure><figcaption><strong id="srrConvertedTitle"></strong><span id="srrConvertedCount"></span></figcaption><canvas id="srrConverted" role="img" aria-label="กราฟต้นฉบับ 44.1 kHz ที่แปลงเป็นอัตราปลายทาง"></canvas></figure>
         <figure><figcaption><strong id="srrOriginalTitle"></strong><span id="srrOriginalCount"></span></figcaption><canvas id="srrNative" role="img" aria-label="กราฟที่อัดด้วย Sample Rate ที่เลือกตั้งแต่ต้น"></canvas></figure>
       </div>
-      <div class="src-legend"><span><i class="src-original"></i>44.1 → 48 kHz</span><span><i class="src-converted"></i>อัดที่อัตราที่เลือกตั้งแต่ต้น</span><span><i class="src-wave"></i>สัญญาณก่อนบันทึก (เส้นประ)</span></div>
+      <div class="src-legend"><span><i class="src-original"></i><span id="srrConvertedLegend"></span></span><span><i class="src-converted"></i>อัดที่อัตราที่เลือกตั้งแต่ต้น</span><span><i class="src-wave"></i>สัญญาณก่อนบันทึก (เส้นประ)</span></div>
       <p class="src-caption">แกนตั้ง: Amplitude normalized · แกนนอน: เวลา 0–1 ms · เส้นสีคือคลื่นที่สร้างกลับแบบอุดมคติ จุดคือค่าตัวอย่างตามอัตราของไฟล์ ไม่ใช่เส้นตรงเชื่อม samples สัญญาณฐาน 2 kHz มีแอมพลิจูด 0.5 และความถี่ทดสอบมีแอมพลิจูด 0.25 ทั้งสองฝั่ง</p>
       <dl class="src-metrics">
-        <div><dt>ขอบเขตข้อมูลเดิมฝั่ง 44.1 → 48</dt><dd>ต่ำกว่า 22.05 kHz</dd></div>
+        <div><dt>ขอบเขตข้อมูลเดิมฝั่งแปลงจาก 44.1</dt><dd>ต่ำกว่า 22.05 kHz</dd></div>
         <div><dt>ขอบเขตทางทฤษฎีฝั่ง Original</dt><dd id="srrBandwidth"></dd></div>
-        <div><dt>Samples / วินาที · ซ้าย → ขวา</dt><dd id="srrSamples"></dd></div>
-        <div><dt>1 นาที · Stereo · 24-bit · ซ้าย → ขวา</dt><dd id="srrSize"></dd></div>
+        <div><dt>Samples / วินาที · เท่ากันทั้งสองฝั่ง</dt><dd id="srrSamples"></dd></div>
+        <div><dt>ต่อไฟล์ · 1 นาที · Stereo · 24-bit</dt><dd id="srrSize"></dd></div>
       </dl>
-      <div class="bdc-table-wrap"><table class="info-table"><thead><tr><th>ส่วนของเสียง</th><th>44.1 → 48 kHz</th><th id="srrTableTitle"></th></tr></thead><tbody><tr><td>เสียงฐาน 2 kHz</td><td>เก็บได้</td><td>เก็บได้</td></tr><tr><td id="srrToneLabel"></td><td id="srrLeftKept"></td><td id="srrRightKept"></td></tr></tbody></table></div>
+      <div class="bdc-table-wrap"><table class="info-table"><thead><tr><th>ส่วนของเสียง</th><th id="srrConvertedTableTitle"></th><th id="srrTableTitle"></th></tr></thead><tbody><tr><td>เสียงฐาน 2 kHz</td><td>เก็บได้</td><td>เก็บได้</td></tr><tr><td id="srrToneLabel"></td><td id="srrLeftKept"></td><td id="srrRightKept"></td></tr></tbody></table></div>
+      <div class="src-plots"><figure style="grid-column:1 / -1"><figcaption><strong>จุดที่ต่างกัน: Original ลบไฟล์ที่แปลง</strong><span id="srrDeltaCaption"></span></figcaption><canvas id="srrDelta" role="img" aria-label="กราฟผลต่างระหว่างสองไฟล์"></canvas></figure></div>
+      <p class="src-caption">กราฟผลต่างใช้แกนเวลาและสเกล Amplitude เดียวกับกราฟด้านบน ถ้าเป็นเส้นศูนย์ แสดงว่าค่าตัวอย่างตรงกันในแบบจำลอง ถ้าเป็นคลื่น แสดงองค์ประกอบเสียงที่ฝั่ง Original มี แต่ฝั่งแปลงไม่มี ไม่ใช่คะแนนคุณภาพหรือเปอร์เซ็นต์ความต่างที่ได้ยิน</p>
       <p class="src-takeaway" id="srrLesson"></p>
       <div class="src-explanations">
-        <div><h3>ได้หรือเสียอะไรเมื่อแปลง 44.1 → 48?</h3><p>ได้ไฟล์ตรงกับโปรเจกต์ 48 kHz และมีจำนวน samples มากขึ้นประมาณ 8.84% โดยความยาวและ Pitch เท่าเดิม ไฟล์ PCM โตตามสัดส่วนเมื่อ Bit Depth และจำนวนช่องคงเดิม แต่ความถี่ที่ถูกกรองก่อนอัด 44.1 kHz ไม่กลับคืน ย่านต่ำกว่าขอบเขตเดิมสามารถรักษาไว้ได้ใกล้เคียงต้นฉบับเมื่อใช้ตัวแปลงที่ดี</p></div>
+        <div><h3>ได้หรือเสียอะไรเมื่อแปลงจาก 44.1 kHz?</h3><p id="srrConversionInfo"></p></div>
         <div><h3>ต่างกันมากน้อยแค่ไหน?</h3><p id="srrDifference"></p><p>จุดถี่ขึ้นไม่ได้ทำให้เสียงในย่านเดิมดีขึ้นโดยอัตโนมัติ ในแบบอุดมคติที่สัญญาณอยู่ในย่านที่ทั้งสองระบบรองรับ คลื่นที่สร้างกลับเหมือนกันได้แม้จำนวนจุดต่างกัน</p></div>
       </div>
       <div class="src-explanations bdc-explanations">
@@ -6328,7 +6330,7 @@ requestAnimationFrame(() => {
     [-1,0,1].forEach(v=>{ctx.strokeStyle=color('--border2');ctx.beginPath();ctx.moveTo(left,y(v));ctx.lineTo(right,y(v));ctx.stroke();ctx.fillStyle=color('--text2');ctx.textAlign='right';ctx.fillText(String(v),left-6,y(v)+4);});
     for(let k=0;k<=4;k++){const xx=x(k*.00025);ctx.strokeStyle=color('--border2');ctx.beginPath();ctx.moveTo(xx,top);ctx.lineTo(xx,bottom);ctx.stroke();ctx.fillStyle=color('--text2');ctx.textAlign=k===4?'right':k===0?'left':'center';ctx.fillText(String(k*.25),xx,h-12);}
     function curve(fn,ink,dashed){ctx.strokeStyle=ink;ctx.lineWidth=dashed?1:1.5;ctx.setLineDash(dashed?[3,3]:[]);ctx.beginPath();for(let i=0;i<=1200;i++){const t=i/1200*.001;i?ctx.lineTo(x(t),y(fn(t))):ctx.moveTo(x(t),y(fn(t)));}ctx.stroke();ctx.setLineDash([]);}
-    curve(original,color('--sky'),true);
+    if(original)curve(original,color('--sky'),true);
     const ink=color(canvas.id==='srrConverted'?'--src-original':'--src-converted');curve(signal,ink,false);ctx.fillStyle=ink;
     for(let i=0;i<sampleRate/1000;i++){const t=i/sampleRate;ctx.beginPath();ctx.arc(x(t),y(signal(t)),2,0,2*Math.PI);ctx.fill();}
   }
@@ -6339,16 +6341,24 @@ requestAnimationFrame(() => {
     const signal=kept=>t=>.5*Math.sin(2*Math.PI*2000*t)+(kept?.25*Math.sin(2*Math.PI*f*t):0);
     const original=signal(true),left=signal(keptLeft),right=signal(keptRight);
     const set=(id,text)=>el(id).textContent=text;
+    const converted='44.1 → '+fmt(r/1000)+' kHz';
+    set('srrConvertedTitle','อัด 44.1 → แปลงเป็น '+fmt(r/1000)+' kHz');set('srrConvertedCount',r/1000+' จุดในช่วง 1 ms');
+    set('srrConvertedLegend',converted);set('srrConvertedTableTitle',converted);
     set('srrOriginalTitle','อัด '+fmt(r/1000)+' kHz ตั้งแต่ต้น');set('srrOriginalCount',r/1000+' จุดในช่วง 1 ms');
-    set('srrBandwidth','ต่ำกว่า '+fmt(r/2000)+' kHz');set('srrSamples','48,000 → '+fmt(r));
-    set('srrSize','17.28 → '+fmt(r*60*2*3/1e6)+' MB');
+    set('srrBandwidth','ต่ำกว่า '+fmt(r/2000)+' kHz');set('srrSamples',fmt(r)+' ทั้งคู่');
+    set('srrSize',fmt(r*60*2*3/1e6)+' MB เท่ากัน');
     set('srrTableTitle',fmt(r/1000)+' kHz Original');set('srrToneLabel','ความถี่ทดสอบ '+fmt(f/1000)+' kHz');
     set('srrLeftKept',keptLeft?'เก็บได้':'ถูกกรองออกก่อนอัด 44.1 kHz');set('srrRightKept',keptRight?'เก็บได้ในแบบอุดมคติ':'ถูกกรองออกก่อนอัด '+fmt(r/1000)+' kHz');
-    set('srrStatus',keptLeft?'ทั้งสองฝั่งเก็บความถี่ทดสอบได้: คลื่นที่สร้างกลับตรงกันในแบบอุดมคติ':keptRight?'ฝั่ง Original เก็บ '+fmt(f/1000)+' kHz ได้ แต่การแปลง 44.1 → 48 kHz ไม่กู้ความถี่นี้กลับมา':'ทั้งสองฝั่งกรอง '+fmt(f/1000)+' kHz ออก: กราฟเหมือนกันเพราะเหลือเพียงเสียงฐาน 2 kHz');
-    set('srrLesson',keptLeft?'ข้อสังเกต: แม้จุดตัวอย่างจะอยู่ต่างเวลา หรือมีจำนวนไม่เท่ากัน ก็สร้างคลื่นในย่านที่รองรับกลับมาเหมือนกันได้ การเพิ่ม Sample Rate ไม่ได้เพิ่มคุณภาพเสมอไป':keptRight?'ข้อสังเกต: ข้อมูลที่ไม่ได้เก็บในต้นฉบับ 44.1 kHz ไม่กลับคืนจาก Upsample ความต่างในกราฟนี้เป็นข้อมูลย่านสูง ไม่ใช่หลักฐานว่าเสียงที่มนุษย์ได้ยินดีขึ้น':'ข้อสังเกต: คลื่นสองฝั่งที่เหมือนกันไม่ได้แปลว่าเก็บสัญญาณต้นทางได้ครบ ความถี่ทดสอบเกินขอบเขตทั้งคู่จึงถูกตัดออก ลองเลือกอัตราบันทึกที่สูงกว่า');
-    set('srrDifference','ในทางทฤษฎี ฝั่ง '+fmt(r/1000)+' kHz มีขอบเขต Nyquist สูงกว่าข้อมูลต้นฉบับ 44.1 kHz อยู่ '+fmt(r/2000-22.05)+' kHz และมีจำนวน samples '+fmt(r/48000)+' เท่าของไฟล์ 48 kHz ฝั่งซ้าย ทั้งสองคงระยะเวลาและ Pitch เดิม ประโยชน์จริงขึ้นกับเนื้อเสียง อุปกรณ์ ตัวกรอง และงานที่ทำต่อ');
-    draw(el('srrConverted'),48000,left,original);draw(el('srrNative'),r,right,original);
-    el('srrConverted').setAttribute('aria-label','44.1 แปลงเป็น 48 kHz: '+el('srrLeftKept').textContent+' สำหรับ '+fmt(f/1000)+' kHz');
+    set('srrStatus',keptLeft?'ทั้งสองฝั่งเก็บความถี่ทดสอบได้: คลื่นและค่าตัวอย่างตรงกันในแบบอุดมคติ':keptRight?'ฝั่ง Original เก็บ '+fmt(f/1000)+' kHz ได้ แต่การแปลง '+converted+' ไม่กู้ความถี่นี้กลับมา แม้มีจำนวนจุดเท่ากัน':'ทั้งสองฝั่งกรอง '+fmt(f/1000)+' kHz ออก: กราฟเหมือนกันเพราะเหลือเพียงเสียงฐาน 2 kHz');
+    set('srrLesson',keptLeft?'ข้อสังเกต: จุดทั้งสองฝั่งอยู่เวลาเดียวกันและมีค่าเท่ากันในแบบจำลองนี้ เพราะเสียงอยู่ในย่านที่ 44.1 kHz เก็บได้อยู่แล้ว การอัดอัตราสูงขึ้นไม่เพิ่มข้อมูลใหม่ให้สัญญาณตัวอย่างนี้':keptRight?'ข้อสังเกต: จุดมีจำนวนเท่ากันและอยู่เวลาเดียวกัน แต่ค่าบางจุดต่างกัน เพราะฝั่ง Original มีองค์ประกอบความถี่สูงที่ต้นฉบับ 44.1 kHz ไม่ได้เก็บไว้ การ Upsample ไม่กู้ข้อมูลนั้น ความต่างนี้ไม่ได้ยืนยันว่ามนุษย์จะได้ยินเสียงดีขึ้น':'ข้อสังเกต: คลื่นสองฝั่งที่เหมือนกันไม่ได้แปลว่าเก็บสัญญาณต้นทางได้ครบ ความถี่ทดสอบเกินขอบเขตทั้งคู่จึงถูกตัดออก ลองเลือกอัตราบันทึกที่สูงกว่า');
+    set('srrDifference','ทั้งสองไฟล์เป็น '+fmt(r/1000)+' kHz มีจำนวน samples และขนาด PCM เท่ากันเมื่อความยาว Bit Depth และจำนวนช่องเท่ากัน แต่ไฟล์ที่แปลงจาก 44.1 kHz ยังไม่มีข้อมูลเดิมตั้งแต่ 22.05 kHz ขึ้นไป ขณะที่การอัด '+fmt(r/1000)+' kHz ตั้งแต่ต้นมีขอบเขตทางทฤษฎีต่ำกว่า '+fmt(r/2000)+' kHz ความต่างจริงขึ้นกับสัญญาณ ไมโครโฟน ระบบบันทึก และตัวกรอง');
+    set('srrConversionInfo','แปลง '+converted+' ได้จำนวน samples และขนาด PCM เพิ่มประมาณ '+fmt((r/44100-1)*100)+'% จากไฟล์ 44.1 kHz เมื่อความยาว Bit Depth และจำนวนช่องคงเดิม โดย Pitch ไม่เปลี่ยน จุดเพิ่มมาจากการคำนวณข้อมูลเดิม ไม่ได้เพิ่มย่านความถี่ที่สูญหายก่อนบันทึก ตัวแปลงที่ดีรักษาเสียงในย่านเดิมได้ใกล้เคียงต้นฉบับ');
+    const differs=!keptLeft&&keptRight;
+    set('srrDeltaCaption',differs?'ต่างที่ '+fmt(f/1000)+' kHz · แอมพลิจูดคลื่นผลต่าง 0.25':'ผลต่างเป็นศูนย์ในแบบจำลอง');
+    draw(el('srrConverted'),r,left,original);draw(el('srrNative'),r,right,original);
+    draw(el('srrDelta'),r,t=>right(t)-left(t),null);
+    el('srrDelta').setAttribute('aria-label',el('srrDeltaCaption').textContent);
+    el('srrConverted').setAttribute('aria-label',converted+': '+el('srrLeftKept').textContent+' สำหรับ '+fmt(f/1000)+' kHz');
     el('srrNative').setAttribute('aria-label',fmt(r/1000)+' kHz Original: '+el('srrRightKept').textContent+' สำหรับ '+fmt(f/1000)+' kHz');
   }
   const schedule=()=>{if(!frame)frame=requestAnimationFrame(render);};
@@ -6358,7 +6368,6 @@ requestAnimationFrame(() => {
   new MutationObserver(schedule).observe(el('page-basics-samplerate'),{attributes:true,attributeFilter:['class']});
   render();
 })();
-
 </script>
 </body>
 </html>
