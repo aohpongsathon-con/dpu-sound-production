@@ -1030,6 +1030,23 @@ html[data-theme="light"] .src-lab{--src-original:#be123c;--src-converted:#0369a1
 @media(max-width:700px){.src-plots,.src-explanations{grid-template-columns:1fr}.src-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.src-heading h2{font-size:21px}.src-controls{gap:10px}.src-controls select{min-width:115px}.src-controls .src-check{width:100%}.src-lab{padding:20px 0}}
 
 </style>
+<style id="bdcLabStyles">
+.bdc-lab{scroll-margin-top:90px}
+.bdc-lab .bdc-scenario-label{flex:1 1 240px;min-width:0}
+.bdc-lab select{max-width:100%;width:100%}
+.bdc-lab .src-check:has(input:disabled){opacity:.65}
+.bdc-explanations{grid-template-columns:repeat(3,minmax(0,1fr));margin:20px 0}
+.bdc-values{margin:16px 0;border-block:1px solid var(--border2);padding:12px 0}
+.bdc-values summary{cursor:pointer;font-size:14px;line-height:1.8;color:var(--sky)}
+.bdc-values summary:focus-visible{outline:2px solid var(--sky);outline-offset:4px}
+.bdc-table-wrap{overflow-x:auto;margin-top:10px}
+.bdc-values table{table-layout:fixed;width:100%}
+.bdc-values th,.bdc-values td{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.bdc-values th:first-child{width:20%}
+.bdc-footnote{margin:16px 0 12px}
+@media(max-width:700px){.bdc-explanations{grid-template-columns:1fr}.bdc-lab .bdc-scenario-label{flex-basis:100%}.bdc-values th,.bdc-values td{padding:8px 5px;font-size:11px}}
+
+</style>
 </head>
 <body>
 
@@ -1576,8 +1593,50 @@ html[data-theme="light"] .src-lab{--src-original:#be123c;--src-converted:#0369a1
         <span class="sr-leg-item"><span class="sr-leg-dot" style="background:#34D399"></span>ระดับ Digital ที่บันทึกได้</span>
         <span class="sr-leg-item"><span class="sr-leg-dot" style="background:#F87171"></span>บริเวณที่เสี่ยง Clip</span>
       </div>
-      <div class="bd-meter-note">Bit Depth ไม่ได้เพิ่มความถี่สูงเหมือน Sample Rate แต่เพิ่มความละเอียดของ “ความดัง” และเพิ่มพื้นที่ปลอดภัยเวลาบันทึกเสียงเบา/ดังมาก</div>
+      <div class="bd-meter-note">Bit Depth เกี่ยวกับการแทนค่าระดับสัญญาณ ไม่ได้เปลี่ยน Sample Rate กราฟด้านบนย่อจำนวนระดับเพื่ออธิบายแนวคิด ส่วนแบบจำลองด้านล่างใช้ค่าตัวอย่างจริงของ 16/24-bit PCM และ 32-bit Float</div>
     </div>
+
+    <section class="src-lab bdc-lab" id="bdcLab" aria-labelledby="bdcHeading">
+      <header class="src-heading">
+        <p class="page-eyebrow">ทดลองแปลง Bit Depth</p>
+        <h2 id="bdcHeading">16-bit แปลงเป็น 32-bit Float ได้อะไร?</h2>
+        <p>แปลงได้และเก็บค่าตัวอย่างเดิมได้ครบเมื่อไม่ปรับเสียง แต่ไม่ได้บันทึกรายละเอียดใหม่เพิ่มเข้ามา ประโยชน์หลักคือพื้นที่สำหรับประมวลผลต่อ</p>
+      </header>
+      <div class="src-controls">
+        <label>ต้นทาง<select id="bdcFrom" aria-label="Bit Depth ต้นทาง"><option value="16">16-bit PCM</option><option value="24">24-bit PCM</option><option value="32">32-bit Float</option></select></label>
+        <span class="src-direction" aria-hidden="true">&#8594;</span>
+        <label>ปลายทาง<select id="bdcTo" aria-label="Bit Depth ปลายทาง"><option value="16">16-bit PCM</option><option value="24">24-bit PCM</option><option value="32" selected>32-bit Float</option></select></label>
+        <label class="bdc-scenario-label">สถานการณ์<select id="bdcScenario" aria-label="สถานการณ์แปลง Bit Depth"><option value="convert">แปลงอย่างเดียว</option><option value="gain">เพิ่มเสียง 4 เท่า แล้วลดกลับ</option><option value="quiet">เสียงเบามาก ประมาณ -90 dBFS</option><option value="clipped">ต้นฉบับแตกก่อนบันทึกแล้ว</option></select></label>
+        <label class="src-check"><input id="bdcDither" type="checkbox" disabled>ใช้ TPDF Dither เมื่อลดความละเอียด</label>
+      </div>
+      <p class="src-caption" id="bdcDitherNote">ไม่ต้องใช้ Dither ในการแปลง 16-bit เป็น 32-bit Float</p>
+      <p class="src-status" id="bdcStatus" role="status" aria-live="polite"></p>
+      <div class="src-plots">
+        <figure><figcaption><strong id="bdcBeforeTitle">ต้นฉบับ 16-bit PCM</strong><span>96 samples · 48 kHz</span></figcaption><canvas id="bdcBefore" role="img" aria-label="ค่าตัวอย่างก่อนแปลง Bit Depth"></canvas></figure>
+        <figure><figcaption><strong id="bdcAfterTitle">หลังแปลง 32-bit Float</strong><span id="bdcAfterSub">96 samples เท่าเดิม</span></figcaption><canvas id="bdcAfter" role="img" aria-label="ค่าตัวอย่างหลังแปลง Bit Depth"></canvas></figure>
+      </div>
+      <div class="src-legend"><span><i class="src-original"></i>ค่าต้นฉบับ / เส้นอ้างอิง</span><span><i class="src-converted"></i>ค่าหลังแปลง</span></div>
+      <p class="src-caption" id="bdcGraphNote"></p>
+      <dl class="src-metrics">
+        <div><dt>ข้อมูลเสียง 1 นาที · Stereo · 48 kHz</dt><dd id="bdcSize"></dd></div>
+        <div><dt>จำนวน samples / Pitch / ระยะเวลา</dt><dd>เท่าเดิมทั้งหมด</dd></div>
+        <div><dt>ผลต่างสูงสุดจากค่าต้นฉบับ</dt><dd id="bdcError"></dd></div>
+        <div><dt>Samples ที่ล้นขอบเขตขณะเขียนไฟล์</dt><dd id="bdcClips"></dd></div>
+      </dl>
+      <details class="bdc-values"><summary>ดูค่าตัวอย่างจริงก่อนและหลังแปลง</summary><div class="bdc-table-wrap"><table class="info-table"><thead><tr><th>Sample</th><th>ต้นฉบับ</th><th>ผลลัพธ์</th></tr></thead><tbody id="bdcValues"></tbody></table></div></details>
+      <div class="src-explanations bdc-explanations">
+        <div><h3>สิ่งที่ได้</h3><p id="bdcGain"></p></div>
+        <div><h3>สิ่งที่เสีย / สิ่งที่ไม่ได้คืน</h3><p id="bdcLoss"></p></div>
+        <div><h3>เหมาะกับงานแบบไหน?</h3><p id="bdcUse"></p></div>
+      </div>
+      <p class="src-takeaway" id="bdcLesson"></p>
+      <div class="src-explanations">
+        <div><h3>32-bit Float ต่างจาก 32-bit Integer</h3><p>ตัวอย่างนี้ใช้ Float ซึ่งมีความแม่นยำของเลขนัยสำคัญประมาณ 24 บิตและมี exponent เพื่อขยายช่วงค่า ไม่ใช่ 32 บิตความละเอียดแบบจำนวนเต็มที่กระจายเท่ากันทั้งช่วง Float เก็บค่าดิจิทัลเกิน 0 dBFS ได้ แต่ก่อนส่งออกเป็น Integer หรือเล่นผ่านอุปกรณ์ต้องปรับระดับให้เหมาะสม</p></div>
+        <div><h3>ลำดับงานที่แนะนำ</h3><p>เก็บต้นฉบับไว้ → ตัดต่อและมิกซ์ในระบบ Float ที่โปรแกรมรองรับ → ตรวจ Peak / True Peak และระดับเสียง → ส่งออกตามข้อกำหนด ใช้ Dither ตอนลดความละเอียดครั้งสุดท้ายเมื่อจำเป็น ไม่ใส่ซ้ำทุกครั้งที่บันทึก และตรวจว่าโปรแกรมปลายทางรองรับ Float</p></div>
+      </div>
+      <p class="src-caption bdc-footnote">แบบจำลองคำนวณค่าตัวอย่างดิจิทัลเพื่อการเรียนรู้ ไม่ได้แปลงหรือเล่นไฟล์เสียงจริง ขนาดไฟล์เป็นข้อมูล PCM / IEEE Float ไม่รวม header หรือการบีบอัด การเปลี่ยนรูปแบบไฟล์ไม่เท่ากับการอัดใหม่ด้วยเครื่องบันทึก 32-bit Float และไม่ป้องกันไมโครโฟน ภาค Analog หรือปลั๊กอินที่มีข้อจำกัดจากการ Clip</p>
+      <p class="src-reference">อ้างอิง: <a href="https://helpx.adobe.com/audition/desktop/editing-audio-files/converting-sample-types.html" target="_blank" rel="noopener noreferrer">Adobe: Convert Sample Types</a> · <a href="https://manual.audacityteam.org/man/dither.html" target="_blank" rel="noopener noreferrer">Audacity: Dither</a> · <a href="https://doxy.audacityteam.org/_sample_format_8cpp.html" target="_blank" rel="noopener noreferrer">Audacity: Sample Format Conversion</a></p>
+    </section>
 
     <div class="content-body">
       <div class="content-section">
@@ -1586,13 +1645,13 @@ html[data-theme="light"] .src-lab{--src-original:#be123c;--src-converted:#0369a1
           <tr><th>Bit Depth</th><th>Dynamic Range</th><th>ใช้งาน</th></tr>
           <tr><td><strong>16-bit</strong></td><td>~96 dB</td><td>มาตรฐาน CD Audio</td></tr>
           <tr class="highlight"><td><strong>24-bit ✅</strong></td><td>~144 dB</td><td>มาตรฐานการบันทึกเสียงและทำเพลง/ภาพยนตร์ปัจจุบัน</td></tr>
-          <tr><td><strong>32-bit Float</strong></td><td>ไม่จำกัด</td><td>เทคโนโลยีใหม่ในเครื่องอัดภาคสนาม แทบเป็นไปไม่ได้ที่เสียงจะ Clip</td></tr>
+          <tr><td><strong>32-bit Float</strong></td><td>ช่วงค่ากว้างมาก แต่มีขอบเขต</td><td>ไฟล์กลางสำหรับประมวลผล และเครื่องบันทึกที่รองรับ; ภาค Analog ยัง Clip ได้</td></tr>
         </table>
       </div>
       <div class="content-section">
         <h3>ทำไม 32-bit Float ถึงพิเศษ?</h3>
-        <p>32-bit Float ใช้ระบบทศนิยมลอยตัว (Floating Point) แทนที่จะเป็นจำนวนเต็ม (Integer) ทำให้ Dynamic Range แทบไม่จำกัด — แม้เสียงดังมากจนเกิน 0 dBFS ใน Monitor ข้อมูลที่บันทึกไว้ยังคงสมบูรณ์ สามารถนำไป Adjust ใน Post-Production ได้</p>
-        <p>เครื่องที่รองรับ 32-bit Float เช่น Zoom F6, RØDE Wireless GO II, Saramonic Blink 500 Pro, DJI Mic3</p>
+        <p>32-bit Float ใช้เลขทศนิยมลอยตัว เก็บค่าดิจิทัลเกิน 0 dBFS ได้ จึงลดระดับภายหลังได้หากข้อมูลยังไม่ถูก Clip มาก่อน แต่ช่วงค่ามีขอบเขตและความแม่นยำไม่ได้เท่ากับ 32-bit Integer</p>
+        <p>การบันทึก 32-bit Float ต้องตรวจสเปกของอุปกรณ์และโหมดบันทึกแต่ละรุ่น การ Export ไฟล์ 16-bit เป็น Float ไม่ได้เปลี่ยนขีดจำกัดของไมโครโฟน ภาคขยาย หรือ ADC ที่ใช้บันทึกต้นฉบับ</p>
       </div>
     </div>
   </div>
@@ -6352,6 +6411,87 @@ requestAnimationFrame(() => {
   else window.addEventListener('resize',schedule);
   new MutationObserver(schedule).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
   new MutationObserver(schedule).observe(el('page-basics-samplerate'),{attributes:true,attributeFilter:['class']});
+  render();
+})();
+
+</script>
+<script id="bdcLabScript">
+/* Numerical teaching example: normalized signed PCM and IEEE binary32. */
+(function(){
+  'use strict';
+  const lab=document.getElementById('bdcLab');if(!lab)return;
+  const el=id=>document.getElementById(id);
+  const from=el('bdcFrom'),to=el('bdcTo'),scenario=el('bdcScenario'),dither=el('bdcDither');
+  const label=b=>b===32?'32-bit Float':b+'-bit PCM';
+  const fmt=n=>n.toLocaleString('en-US',{maximumFractionDigits:2});
+  function pcm(x,bits){const scale=2**(bits-1);return Math.max(-scale,Math.min(scale-1,Math.round(x*scale)))/scale;}
+  const encode=(x,bits)=>bits===32?Math.fround(x):pcm(x,bits);
+  let frame=0;
+  function model(a,b,mode,useDither){
+    const input=[],output=[];let clipped=0,seed=7321;
+    // A fixed seed makes the TPDF demonstration repeatable when resizing.
+    const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+    const gain=mode==='gain'?4:1;
+    for(let n=0;n<96;n++){
+      const sine=Math.sin(2*Math.PI*1000*n/48000);
+      let x=(mode==='quiet'?10**(-90/20):.8)*sine;
+      if(mode==='clipped')x=Math.max(-.5,Math.min(.5,x));
+      x=encode(x,a);input.push(x);
+      let y=x*gain;
+      if(useDither&&b!==32)y+=(random()-random())/(2**(b-1));
+      if(b!==32&&(y < -1 || y > 1-1/(2**(b-1))))clipped++;
+      // The saved intermediate uses the destination format; attenuation is in float.
+      output.push(encode(y,b)/gain);
+    }
+    return {input,output,clipped,error:Math.max(...input.map((v,i)=>Math.abs(v-output[i])))};
+  }
+  function draw(canvas,values,reference,quiet){
+    const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
+    const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+    const ctx=canvas.getContext('2d');if(!ctx)return;ctx.setTransform(dpr,0,0,dpr,0,0);
+    const style=getComputedStyle(lab),color=k=>style.getPropertyValue(k).trim();
+    const left=quiet?53:35,right=w-14,top=18,bottom=h-32,limit=quiet?.0001:1;
+    const x=i=>left+i/96*(right-left),y=v=>top+(limit-v)/(limit*2)*(bottom-top);
+    ctx.font='11px Inter, sans-serif';ctx.lineWidth=1;
+    [-1,0,1].forEach(v=>{ctx.strokeStyle=color('--border2');ctx.beginPath();ctx.moveTo(left,y(v*limit));ctx.lineTo(right,y(v*limit));ctx.stroke();ctx.textAlign='right';ctx.fillStyle=color('--text2');ctx.fillText(quiet&&v?v+'e-4':String(v),left-6,y(v*limit)+4);});
+    for(let i=0;i<=4;i++){const xx=left+i/4*(right-left);ctx.strokeStyle=color('--border2');ctx.beginPath();ctx.moveTo(xx,top);ctx.lineTo(xx,bottom);ctx.stroke();ctx.textAlign=i===4?'right':i===0?'left':'center';ctx.fillStyle=color('--text2');ctx.fillText(String(i*.5),xx,h-12);}
+    function plot(data,ink,dashed,dots){ctx.strokeStyle=ink;ctx.lineWidth=1.5;ctx.setLineDash(dashed?[4,3]:[]);ctx.beginPath();data.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.stroke();ctx.setLineDash([]);if(dots){ctx.fillStyle=ink;data.forEach((v,i)=>{ctx.beginPath();ctx.arc(x(i),y(v),2,0,Math.PI*2);ctx.fill();});}}
+    if(reference)plot(reference,color('--src-original'),true,false);
+    plot(values,color(reference?'--src-converted':'--src-original'),false,true);
+  }
+  function render(){
+    frame=0;
+    const a=Number(from.value),b=Number(to.value),mode=scenario.value;
+    if(![16,24,32].includes(a)||![16,24,32].includes(b))return;
+    const reduction=b!==32&&(a===32||a>b);
+    const canDither=reduction;dither.disabled=!canDither;
+    if(!canDither)dither.checked=false;
+    const useDither=canDither&&dither.checked,result=model(a,b,mode,useDither);
+    const set=(id,text)=>el(id).textContent=text;
+    set('bdcDitherNote',canDither?'TPDF Dither เติม noise ระดับต่ำก่อนปัดค่า เพื่อลดความเพี้ยนที่สัมพันธ์กับสัญญาณ แลกกับ noise floor ที่สูงขึ้นเล็กน้อย ไม่ได้ป้องกัน Clipping':'การคงหรือเพิ่มความละเอียดในตัวอย่างนี้ไม่จำเป็นต้องใส่ Dither');
+    set('bdcBeforeTitle','ต้นฉบับ '+label(a));set('bdcAfterTitle','ปลายทาง '+label(b));
+    set('bdcAfterSub',mode==='gain'?'ผลหลังลดกลับในระบบ Float':'96 samples เท่าเดิม');
+    const size=bits=>fmt(48000*60*2*(bits/8)/1e6);
+    set('bdcSize',size(a)+' → '+size(b)+' MB ('+fmt(b/a)+' เท่า)');
+    set('bdcError',result.error===0?'0 (ค่าตัวอย่างตรงกัน)':result.error.toExponential(3));
+    set('bdcClips',result.clipped+' / 96');
+    set('bdcStatus',mode==='gain'?(result.clipped?'มี Clipping ขณะเขียนเป็น Integer: ลดกลับแล้วคลื่นส่วนที่ถูกตัดไม่กลับคืน':'เก็บค่าเกิน 0 dBFS ใน Float ได้: ลดกลับแล้วรักษาคลื่นในตัวอย่างนี้ได้'):mode==='clipped'?'ต้นฉบับถูกตัดยอดก่อนแปลง: เปลี่ยน Bit Depth แล้วก็ยังแตก':result.error===0?'ค่าตัวอย่างก่อน–หลังตรงกัน: ไม่ได้สร้างรายละเอียดเสียงใหม่':'ค่าตัวอย่างเปลี่ยนจากการปัดค่า'+(useDither?' และ Dither':''));
+    set('bdcGraphNote','แกนตั้ง: ค่าระดับสัญญาณแบบ normalized'+(mode==='quiet'?' (ขยายสเกลเป็น ±0.0001 เพื่อดูเสียงเบา)':' (±1 เทียบกับขอบเขต Integer)')+' · แกนนอน: เวลา 0–2 ms เท่ากัน จุดคือค่าตัวอย่างจริง เส้นเชื่อมมีไว้เทียบค่า ไม่ใช่รูปคลื่น Analog ที่เครื่องเล่นสร้างกลับ'+(mode==='gain'?' ขั้นตอน: ต้นฉบับ → Gain ×4 (ประมาณ +12 dB) → เขียนรูปแบบปลายทาง → ลด ×0.25 ใน Float; กราฟขวาคือผลหลังลดกลับ':'')+'.');
+    set('bdcGain',b===32?'ได้รูปแบบ Float สำหรับส่งต่อไปตัดต่อ มิกซ์ ใส่ EQ หรือปรับ Gain โดยรองรับค่าระหว่างประมวลผลเกิน 0 dBFS ค่าตัวอย่าง 16/24-bit Integer สามารถแทนใน Float32 ได้ตรงเมื่อแปลงอย่างเดียว':b>a?'ได้พื้นที่ค่าระดับเสียงที่ละเอียดขึ้นสำหรับงานต่อไป ค่าต้นฉบับ 16-bit แทนใน 24-bit ได้ตรง แต่จุดข้อมูลเดิมยังมีรายละเอียดเท่าเดิม':b===a?'ได้รูปแบบเดิม หากไม่ประมวลผลก็ไม่มีประโยชน์จากการแปลงซ้ำ':'ได้ไฟล์เล็กลงและรูปแบบ Integer สำหรับส่งมอบตามข้อกำหนดของงาน');
+    set('bdcLoss',b===32?'ไฟล์ใหญ่ขึ้นเมื่อมาจาก 16/24-bit และอุปกรณ์บางชนิดไม่รองรับ Float ไม่ได้ลด noise เดิม เพิ่มรายละเอียดที่หายไป หรือซ่อม Clipping ที่เกิดก่อนแปลง การแปลงอย่างเดียวจาก Integer ไม่สูญเสียค่าตัวอย่างเดิม':reduction?'ความละเอียดของค่าตัวอย่างลดลง เกิดการปัดค่าและอาจมี noise เพิ่มจาก Dither; ค่าที่เกินช่วง Integer จะ Clip ต้องลดระดับก่อนส่งออก รายละเอียดที่ตัดทิ้งไม่กลับมาเมื่อเพิ่มบิตภายหลัง':b>a?'ใช้พื้นที่เพิ่ม แต่คุณภาพต้นฉบับไม่ดีขึ้นเอง และ Integer ยังเก็บค่าที่เกิน 0 dBFS ไม่ได้':'ไม่มีการสูญเสียเพิ่มจากการคงรูปแบบเพียงอย่างเดียว แต่ขั้นตอนประมวลผลยังทำให้ Clip หรือเปลี่ยนค่าได้');
+    set('bdcUse',b===32?'ไฟล์กลางระหว่างตัดต่อเสียงภาพยนตร์ สารคดี Podcast งานมิกซ์ และ Sound Design ที่ต้องประมวลผลต่อ โปรแกรมหลายตัวคำนวณภายในแบบ Float อยู่แล้ว จึงไม่จำเป็นต้องแปลงทุกไฟล์เองก่อนนำเข้า':b===24?'ส่งไฟล์ WAV ให้ทีม Post-production / มิกซ์ หรือส่งมอบ 24-bit ตามสเปก โดยตรวจระดับ Peak ก่อน Export; การแปลงไฟล์ 16-bit ไม่ทำให้ได้รายละเอียดเหมือนอัด 24-bit ตั้งแต่ต้น':'ส่งงานที่ระบุ 16-bit หรือทำ Audio CD ซึ่งต้องใช้ 44.1 kHz ด้วย ตัวอย่างนี้คงที่ 48 kHz จึงยังไม่ใช่ไฟล์ CD-ready; ลด Bit Depth หลังทำงานเสร็จและพิจารณา Dither');
+    const conversionLesson=reduction?'ลดความละเอียดเพื่อส่งมอบงาน ต้องตรวจระดับเสียงและพิจารณา Dither ก่อน Export':a===b?'คงรูปแบบเดิม ไม่ได้เพิ่มหรือลดความละเอียดจากการแปลงอย่างเดียว':'เพิ่มพื้นที่ทำงาน แต่ไม่เพิ่มรายละเอียดต้นฉบับ';
+    set('bdcLesson',mode==='gain'?'บทเรียน: Headroom ของ Float ช่วยเก็บค่าที่ล้นระหว่างคำนวณหรือในไฟล์กลางได้ ต้องลดระดับก่อนเล่นจริงหรือส่งออก Integer และไม่รับประกันว่าปลั๊กอินหรือภาค Analog จะไม่ Clip':mode==='quiet'?'บทเรียน: เพิ่มบิตไม่ทำให้ขั้นความละเอียดที่สูญเสียไปแล้วกลับมา เสียงเบาที่ถูก quantize ใน 16-bit ยังคงค่าเดิมเมื่อย้ายไป Float; Dither ตอนลดบิตช่วยลดความเพี้ยน แต่ไม่ทำให้กราฟตรงต้นฉบับทุกจุด':mode==='clipped'?'บทเรียน: การแปลงเป็น 32-bit Float ไม่ใช่การซ่อมเสียงแตก ยอดที่ถูกตัดในไมโครโฟน ภาค Analog หรือไฟล์ต้นฉบับไม่มีข้อมูลให้รูปแบบใหม่เรียกคืน':'บทเรียน: '+label(a)+' → '+label(b)+' '+conversionLesson+' โดยไม่เปลี่ยน Sample Rate จำนวน samples ความยาว หรือ Pitch');
+    const body=el('bdcValues');body.replaceChildren();
+    [0,7,12,25,37,60].forEach(i=>{const row=document.createElement('tr');[String(i),result.input[i].toPrecision(9),result.output[i].toPrecision(9)].forEach(value=>{const cell=document.createElement('td');cell.textContent=value;row.appendChild(cell);});body.appendChild(row);});
+    draw(el('bdcBefore'),result.input,null,mode==='quiet');draw(el('bdcAfter'),result.output,result.input,mode==='quiet');
+    el('bdcAfter').setAttribute('aria-label',label(b)+' '+el('bdcStatus').textContent+' ผลต่างสูงสุด '+el('bdcError').textContent);
+  }
+  const schedule=()=>{if(!frame)frame=requestAnimationFrame(render);};
+  [from,to,scenario,dither].forEach(control=>control.addEventListener('change',schedule));
+  if(window.ResizeObserver)new ResizeObserver(schedule).observe(lab);else window.addEventListener('resize',schedule);
+  new MutationObserver(schedule).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  new MutationObserver(schedule).observe(el('page-basics-bitdepth'),{attributes:true,attributeFilter:['class']});
   render();
 })();
 
