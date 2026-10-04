@@ -1324,36 +1324,37 @@ html[data-theme="light"] .src-lab{--src-original:#be123c;--src-converted:#0369a1
       <header class="src-heading">
         <p class="page-eyebrow">แปลงไฟล์ VS บันทึกตั้งแต่ต้น</p>
         <h2 id="bdrHeading">เป็นไฟล์ 24-bit เหมือนกัน แต่ข้อมูลข้างในเท่ากันไหม?</h2>
-        <p>ใช้สัญญาณก่อนบันทึกเดียวกัน เทียบสองเส้นทาง: อัดเป็น 16-bit แล้วแปลงเป็น 24-bit กับอัดเป็น 24-bit ตั้งแต่ต้น โดยคง Sample Rate ที่ 48 kHz</p>
+        <p id="bdrIntro"></p>
       </header>
       <div class="src-controls">
+        <label>ต้นฉบับที่ต้องการเปรียบเทียบ<select id="bdrFormat" aria-label="รูปแบบต้นฉบับที่ใช้เปรียบเทียบ"><option value="24">24-bit PCM Original</option><option value="32">32-bit Float Original</option></select></label>
         <label>ระดับสัญญาณก่อนบันทึก (Peak)<select id="bdrLevel" aria-label="ระดับเสียงในการเปรียบเทียบการบันทึก"><option value="-6">-6 dBFS · ระดับปกติ</option><option value="-60">-60 dBFS · เสียงเบา</option><option value="-90" selected>-90 dBFS · เสียงเบามาก</option><option value="-110">-110 dBFS · รายละเอียดจางมาก</option></select></label>
         <label class="src-check"><input type="checkbox" id="bdrErrors">ดูความคลาดเคลื่อนจากสัญญาณก่อนบันทึก</label>
       </div>
       <p class="src-status" id="bdrStatus" role="status" aria-live="polite"></p>
       <div class="src-plots">
-        <figure><figcaption><strong>อัด 16-bit → แปลงเป็น 24-bit</strong><span>รายละเอียดเดิมยังจำกัดที่ 16-bit</span></figcaption><canvas id="bdrPadded" role="img" aria-label="กราฟไฟล์ 16-bit ที่แปลงเป็น 24-bit"></canvas></figure>
-        <figure><figcaption><strong>อัด 24-bit ตั้งแต่ต้น</strong><span>Quantize ละเอียดตั้งแต่รับสัญญาณ</span></figcaption><canvas id="bdrNative" role="img" aria-label="กราฟไฟล์ที่บันทึกเป็น 24-bit ตั้งแต่ต้น"></canvas></figure>
+        <figure><figcaption><strong id="bdrLeftTitle"></strong><span>รายละเอียดเดิมยังจำกัดที่ 16-bit</span></figcaption><canvas id="bdrPadded" role="img" aria-label="กราฟไฟล์ที่แปลงจาก 16-bit"></canvas></figure>
+        <figure><figcaption><strong id="bdrRightTitle"></strong><span id="bdrRightSub"></span></figcaption><canvas id="bdrNative" role="img" aria-label="กราฟไฟล์ต้นฉบับตามรูปแบบที่เลือก"></canvas></figure>
       </div>
-      <div class="src-legend"><span><i class="src-original"></i>16 → 24-bit</span><span><i class="src-converted"></i>24-bit ตั้งแต่ต้น</span><span><i class="src-wave"></i>เส้นอ้างอิงก่อน Quantize</span></div>
+      <div class="src-legend"><span><i class="src-original"></i><span id="bdrLeftLegend"></span></span><span><i class="src-converted"></i><span id="bdrRightLegend"></span></span><span><i class="src-wave"></i>เส้นอ้างอิงก่อน Quantize</span></div>
       <p class="src-caption" id="bdrScale"></p>
       <dl class="src-metrics">
-        <div><dt>ขั้นความละเอียดของ 24-bit เทียบ 16-bit</dt><dd>เล็กลง 256 เท่า</dd></div>
-        <div><dt>ส่วนต่าง SNR ทางทฤษฎีของ ADC อุดมคติ</dt><dd>ประมาณ 48 dB</dd></div>
-        <div><dt>16 → 24-bit · RMS error ในตัวอย่างนี้</dt><dd id="bdrError16"></dd></div>
-        <div><dt>24-bit ตั้งแต่ต้น · RMS error ในตัวอย่างนี้</dt><dd id="bdrError24"></dd></div>
+        <div><dt id="bdrPrecisionLabel"></dt><dd id="bdrPrecision"></dd></div>
+        <div><dt id="bdrRangeLabel"></dt><dd id="bdrRange"></dd></div>
+        <div><dt id="bdrErrorLeftLabel"></dt><dd id="bdrError16"></dd></div>
+        <div><dt id="bdrErrorRightLabel"></dt><dd id="bdrError24"></dd></div>
       </dl>
-      <p class="src-caption">RMS error คือขนาดความคลาดเคลื่อนเฉลี่ยแบบรากกำลังสองเทียบสัญญาณก่อน Quantize ในช่วง 2 ms นี้ หน่วยเป็น Amplitude normalized และยิ่งต่ำยิ่งใกล้ค่าอ้างอิง ส่วนต่างประมาณ 48 dB มาจาก 6.02 × (24 − 16) ในโมเดล Quantization noise มาตรฐาน ไม่ใช่ผลการวัดเครื่องจริงหรือความดังที่เพิ่มขึ้น</p>
+      <p class="src-caption" id="bdrErrorNote"></p>
       <div class="src-explanations">
-        <div><h3>แปลงเป็น 24-bit แล้วได้อะไร?</h3><p>ได้รูปแบบไฟล์ตรงตามสเปกและพื้นที่ละเอียดขึ้นสำหรับประมวลผลต่อ แต่ค่าเสียงเดิมไม่ละเอียดขึ้น ในการขยาย Integer โดยไม่ปรับเสียงหรือใส่ Dither รหัส 16-bit จะคูณ 256 ทำให้ 8 บิตล่างเป็นศูนย์ ค่าระดับสัญญาณจริงยังเท่าเดิม เช่น 12345/32768 = 3160320/8388608</p></div>
-        <div><h3>อัด 24-bit ตั้งแต่ต้นต่างอย่างไร?</h3><p>มี 16,777,216 รหัสระดับสัญญาณ แทน 65,536 รหัสของ 16-bit จึงลดความคลาดเคลื่อนจาก Quantization และเก็บสัญญาณเบาได้ละเอียดกว่าในระบบอุดมคติ ไม่ใช่เสียงดีขึ้น 256 เท่า และไม่ใช่ความละเอียดที่เพิ่มด้วยการแปลงไฟล์ย้อนหลังได้</p></div>
+        <div><h3 id="bdrConvertTitle"></h3><p id="bdrConvertInfo"></p></div>
+        <div><h3 id="bdrOriginalTitle"></h3><p id="bdrOriginalInfo"></p></div>
       </div>
       <p class="src-takeaway" id="bdrLesson"></p>
       <div class="src-explanations">
-        <div><h3>ได้ยินต่างกันมากไหม?</h3><p>ในการฟังทั่วไป ถ้า 16-bit บันทึกระดับเหมาะสมและระบบมี noise อยู่แล้ว อาจฟังแยกได้ยาก ประโยชน์ของการอัด 24-bit ชัดขึ้นเมื่อมีเสียงเบา ช่วงไดนามิกกว้าง หรือต้องเร่ง Gain ใน Post ความต่างจริงขึ้นกับไมโครโฟน ปรีแอมป์ ADC สภาพแวดล้อม และระบบฟัง ไม่ใช่ Bit Depth เพียงตัวเดียว</p></div>
-        <div><h3>เลือกใช้กับงานไหน?</h3><p>งานอัดบทสนทนา สารคดี บรรยากาศ และดนตรีที่ต้องเผื่อระดับหรือปรับเสียงต่อ ควรอัด 24-bit ตั้งแต่ต้นเมื่ออุปกรณ์รองรับ ถ้ามีต้นฉบับ 16-bit อยู่แล้ว ให้เก็บต้นฉบับและแปลงเมื่อโปรเจกต์หรือผู้รับกำหนด 24-bit โดยไม่คาดหวังว่าจะกู้รายละเอียดที่หายไป</p></div>
+        <div><h3>ได้ยินต่างกันมากไหม?</h3><p>ในการฟังทั่วไป ถ้า 16-bit บันทึกระดับเหมาะสมและระบบมี noise อยู่แล้ว อาจฟังแยกได้ยาก การเก็บรายละเอียดเสียงเบาตั้งแต่ต้นช่วยเมื่อมีช่วงไดนามิกกว้างหรือต้องเร่ง Gain ใน Post ความต่างจริงขึ้นกับไมโครโฟน ปรีแอมป์ ADC สภาพแวดล้อม และระบบฟัง ไม่ใช่ Bit Depth เพียงตัวเดียว</p></div>
+        <div><h3>เลือกใช้กับงานไหน?</h3><p id="bdrUse"></p></div>
       </div>
-      <p class="src-caption bdc-footnote">ทั้งสองไฟล์ปลายทางมีขนาดข้อมูลเท่ากัน: 17.28 MB ต่อ 1 นาที ที่ 48 kHz Stereo 24-bit (ไม่รวม header) และความยาว / Pitch เท่ากัน แบบจำลองนี้ใช้การปัดค่าแบบอุดมคติ ไม่มี Dither หรือ noise ของอุปกรณ์จริง เสียงต่ำกว่า 1 LSB จึงอาจหายไปในตัวอย่าง แต่ระบบที่มี Dither / noise อาจยังแทนสัญญาณต่ำกว่า 1 LSB ในเชิงสถิติได้ กราฟนี้ไม่ใช่การทดสอบการได้ยินหรือเครื่องบันทึกรุ่นใด</p>
+      <p class="src-caption bdc-footnote" id="bdrFileNote"></p>
       <p class="src-reference">หลักการ: <a href="https://www.analog.com/en/resources/technical-articles/defining-and-testing-dynamic-parameters-in-highspeed-adcs-part-1.html" target="_blank" rel="noopener noreferrer">Analog Devices: Quantization และ SNR ของ ADC</a> · <a href="https://manual.audacityteam.org/man/dither.html" target="_blank" rel="noopener noreferrer">Audacity: Dither</a></p>
     </section>
 
@@ -6207,7 +6208,7 @@ requestAnimationFrame(() => {
 (function(){
   'use strict';
   const lab=document.getElementById('bdrLab');if(!lab)return;
-  const el=id=>document.getElementById(id),level=el('bdrLevel'),errors=el('bdrErrors');
+  const el=id=>document.getElementById(id),level=el('bdrLevel'),errors=el('bdrErrors'),format=el('bdrFormat');
   const quantize=(x,bits)=>{const s=2**(bits-1);return Math.max(-s,Math.min(s-1,Math.round(x*s)))/s;};
   let frame=0;
   function draw(canvas,values,ideal,limit,errorMode){
@@ -6225,25 +6226,44 @@ requestAnimationFrame(() => {
     plot(values,color(canvas.id==='bdrPadded'?'--src-original':'--src-converted'),false,true);
   }
   function render(){
-    frame=0;const db=Number(level.value);if(![-6,-60,-90,-110].includes(db))return;
+    frame=0;const db=Number(level.value),bits=Number(format.value);if(![-6,-60,-90,-110].includes(db)||![24,32].includes(bits))return;
+    const floating=bits===32,name=floating?'32-bit Float':'24-bit PCM';
+    const encode=v=>floating?Math.fround(v):quantize(v,24);
     const amp=10**(db/20),ideal=Array.from({length:96},(_,i)=>amp*Math.sin(2*Math.PI*1000*i/48000));
-    const padded=ideal.map(v=>quantize(quantize(v,16),24)),native=ideal.map(v=>quantize(v,24));
+    const padded=ideal.map(v=>encode(quantize(v,16))),native=ideal.map(encode);
     const error16=padded.map((v,i)=>v-ideal[i]),error24=native.map((v,i)=>v-ideal[i]);
     const rms=data=>Math.sqrt(data.reduce((sum,v)=>sum+v*v,0)/data.length);
     const e16=rms(error16),e24=rms(error24),errorMode=errors.checked;
     const left=errorMode?error16:padded,right=errorMode?error24:native;
     const limit=Math.max(errorMode?0:amp,...left.map(Math.abs),...right.map(Math.abs),1e-12)*1.2;
     const set=(id,text)=>el(id).textContent=text;
+    set('bdrHeading','เป็นไฟล์ '+name+' เหมือนกัน แต่ข้อมูลข้างในเท่ากันไหม?');
+    set('bdrIntro','ใช้สัญญาณก่อนบันทึกเดียวกัน เทียบอัด 16-bit แล้วแปลงเป็น '+name+' กับอัด '+name+' ตั้งแต่ต้น โดยคง Sample Rate ที่ 48 kHz'+(floating?' ฝั่ง Original จำลองการแทนค่าสัญญาณอุดมคติด้วย IEEE Float32 ไม่ใช่การจำลอง ADC หรือ noise ของเครื่องบันทึกจริง':''));
+    set('bdrLeftTitle','อัด 16-bit → แปลงเป็น '+name);set('bdrRightTitle','อัด '+name+' ตั้งแต่ต้น');
+    set('bdrRightSub',floating?'IEEE Float32 จากสัญญาณอุดมคติ':'Quantize ละเอียดตั้งแต่รับสัญญาณ');
+    set('bdrLeftLegend','16 → '+name);set('bdrRightLegend',name+' ตั้งแต่ต้น');
+    set('bdrPrecisionLabel',floating?'ความแม่นยำเลขนัยสำคัญของ Float32':'ขั้นความละเอียดของ 24-bit เทียบ 16-bit');
+    set('bdrPrecision',floating?'ประมาณ 24 บิต':'เล็กลง 256 เท่า');
+    set('bdrRangeLabel',floating?'ระยะห่างระหว่างค่าที่แทนได้':'ส่วนต่าง SNR ทางทฤษฎีของ ADC อุดมคติ');
+    set('bdrRange',floating?'เปลี่ยนตามขนาดค่า':'ประมาณ 48 dB');
+    set('bdrErrorLeftLabel','16 → '+name+' · RMS error');set('bdrErrorRightLabel',name+' ตั้งแต่ต้น · RMS error');
+    set('bdrErrorNote','RMS error คือขนาดความคลาดเคลื่อนเฉลี่ยแบบรากกำลังสองเทียบสัญญาณก่อน Quantize ในช่วง 2 ms นี้ หน่วยเป็น Amplitude normalized และยิ่งต่ำยิ่งใกล้ค่าอ้างอิง '+(floating?'Float32 มีระยะห่างระหว่างค่าที่เปลี่ยนตาม exponent จึงไม่ใช้ตัวเลข 256 เท่าหรือส่วนต่าง 48 dB แบบคงที่ของ 24-bit Integer ค่าที่วัดนี้ไม่ใช่ SNR ของเครื่องบันทึกจริง':'ส่วนต่างประมาณ 48 dB มาจาก 6.02 × (24 − 16) ในโมเดล Quantization noise มาตรฐาน ไม่ใช่ผลการวัดเครื่องจริงหรือความดังที่เพิ่มขึ้น'));
+    set('bdrConvertTitle','แปลงเป็น '+name+' แล้วได้อะไร?');
+    set('bdrConvertInfo',floating?'ค่าเสียงจาก 16-bit แทนใน Float32 ได้ตรงโดยไม่สร้างรายละเอียดใหม่ ได้รูปแบบสำหรับประมวลผลต่อและเก็บค่าดิจิทัลเกิน 0 dBFS ในขั้นตอนต่อไป แต่ไม่ลบ noise เดิมหรือกู้ส่วนที่ Clip ไปแล้ว':'ได้รูปแบบไฟล์ตรงตามสเปกและพื้นที่ละเอียดขึ้นสำหรับประมวลผลต่อ แต่ค่าเสียงเดิมไม่ละเอียดขึ้น ในการขยาย Integer โดยไม่ปรับเสียงหรือใส่ Dither รหัส 16-bit จะคูณ 256 ทำให้ 8 บิตล่างเป็นศูนย์ ค่าระดับสัญญาณจริงยังเท่าเดิม เช่น 12345/32768 = 3160320/8388608');
+    set('bdrOriginalTitle','อัด '+name+' ตั้งแต่ต้นต่างอย่างไร?');
+    set('bdrOriginalInfo',floating?'ฝั่งนี้ไม่มีการปัดเป็น 16-bit ก่อน แต่ใช้ Float32 แทนค่าสัญญาณอุดมคติโดยตรง จึงเก็บค่าเสียงเบาได้ละเอียดกว่าตัวอย่างฝั่งซ้าย รูปแบบ Float ไม่ได้มีความละเอียดแบบ Integer 32 บิต และผลอัดจริงยังจำกัดโดยไมโครโฟน ปรีแอมป์ ADC และระบบของเครื่องบันทึก':'มี 16,777,216 รหัสระดับสัญญาณ แทน 65,536 รหัสของ 16-bit จึงลดความคลาดเคลื่อนจาก Quantization และเก็บสัญญาณเบาได้ละเอียดกว่าในระบบอุดมคติ ไม่ใช่เสียงดีขึ้น 256 เท่า และไม่ใช่ความละเอียดที่เพิ่มด้วยการแปลงไฟล์ย้อนหลังได้');
+    set('bdrUse',floating?'เหมาะกับการบันทึกด้วยอุปกรณ์ที่รองรับและงาน Post ที่ต้องปรับ Gain หรือประมวลผลต่อมาก ตรวจข้อจำกัดอินพุตจริงเสมอ เพราะไฟล์ Float ไม่ป้องกันไมโครโฟนหรือภาค Analog จากการ Clip; แปลงไฟล์ 16-bit เดิมเป็น Float ได้เมื่อขั้นตอนงานต้องการ แต่ไม่ทดแทนการบันทึกใหม่':'งานอัดบทสนทนา สารคดี บรรยากาศ และดนตรีที่ต้องเผื่อระดับหรือปรับเสียงต่อ ควรอัด 24-bit ตั้งแต่ต้นเมื่ออุปกรณ์รองรับ ถ้ามีต้นฉบับ 16-bit อยู่แล้ว ให้เก็บต้นฉบับและแปลงเมื่อโปรเจกต์หรือผู้รับกำหนด 24-bit โดยไม่คาดหวังว่าจะกู้รายละเอียดที่หายไป');
+    set('bdrFileNote','ทั้งสองไฟล์ปลายทางมีขนาดข้อมูลเท่ากัน: '+(floating?'23.04':'17.28')+' MB ต่อ 1 นาที ที่ 48 kHz Stereo '+name+' (ไม่รวม header) และความยาว / Pitch เท่ากัน แบบจำลองนี้ใช้การปัดค่าแบบอุดมคติ ไม่มี Dither หรือ noise ของอุปกรณ์จริง เสียงต่ำกว่า 1 LSB ของ 16-bit จึงอาจหายไปในตัวอย่าง แต่ระบบที่มี Dither / noise อาจยังแทนสัญญาณต่ำกว่า 1 LSB ในเชิงสถิติได้ กราฟนี้ไม่ใช่การทดสอบการได้ยินหรือเครื่องบันทึกรุ่นใด');
     set('bdrError16',e16.toExponential(3));set('bdrError24',e24.toExponential(3));
-    set('bdrStatus',db===-6?'ระดับปกติ: รูปคลื่นสองฝั่งแทบซ้อนกัน แต่ยังมีความต่างของการปัดค่า':db===-60?'เสียงเบา: 16-bit มีขั้นความละเอียดหยาบกว่า แม้จะเก็บลงไฟล์ 24-bit แล้ว':db===-90?'เสียงเบามาก: เห็นขั้นจากต้นฉบับ 16-bit ชัดขึ้น ส่วน 24-bit ตั้งแต่ต้นยังเก็บค่าได้ละเอียดกว่า':'เสียงจางมาก: ในแบบจำลองที่ไม่มี Dither นี้ 16-bit ปัดค่าทั้งหมดเป็นศูนย์ แต่ 24-bit ยังเก็บความเปลี่ยนแปลงได้');
+    set('bdrStatus',db===-6?'ระดับปกติ: รูปคลื่นสองฝั่งแทบซ้อนกัน แต่ยังมีความต่างของการปัดค่า':db===-60?'เสียงเบา: 16-bit มีขั้นความละเอียดหยาบกว่า แม้จะเก็บลงไฟล์ '+name+' แล้ว':db===-90?'เสียงเบามาก: เห็นขั้นจากต้นฉบับ 16-bit ชัดขึ้น ส่วน '+name+' ตั้งแต่ต้นยังเก็บค่าได้ละเอียดกว่า':'เสียงจางมาก: ในแบบจำลองที่ไม่มี Dither นี้ 16-bit ปัดค่าทั้งหมดเป็นศูนย์ แต่ '+name+' ยังเก็บความเปลี่ยนแปลงได้');
     set('bdrScale','ระดับก่อนบันทึก '+db+' dBFS Peak · '+(errorMode?'แสดง error = ค่าที่บันทึก − ค่าอ้างอิง; เส้นศูนย์คือไม่มี error':'แกนตั้งเป็น Amplitude normalized; เส้นประคือสัญญาณก่อน Quantize')+' · ทั้งสองกราฟขยายด้วยสเกลเดียวกัน ±'+limit.toExponential(2)+' · เวลา 0–2 ms, 96 samples เท่ากัน สเกลปรับตามระดับที่เลือก จึงไม่ใช่การแสดงความดังจริง; เส้นเชื่อมจุดใช้เทียบค่าตัวอย่าง');
-    set('bdrLesson',db===-6?'ข้อสังเกต: รูปคลื่นคล้ายกันไม่ได้แปลว่าไฟล์มีข้อมูลเหมือนกัน กดดูความคลาดเคลื่อนเพื่อขยายความต่างทางตัวเลข โดยไม่ตีความว่าผู้ฟังจะได้ยินความต่างนั้นเสมอ':'ข้อสังเกต: การเปลี่ยนไฟล์ 16-bit ให้เป็น 24-bit ไม่ทำให้ขั้นหรือข้อมูลที่ปัดหายไปกลับคืน ส่วนการอัด 24-bit ตั้งแต่ต้นลดการปัดค่าตั้งแต่รับสัญญาณ หาก noise ของอุปกรณ์สูงกว่าความต่างนี้ ประโยชน์ที่ได้จริงจะน้อยกว่าแบบจำลอง');
+    set('bdrLesson',db===-6?'ข้อสังเกต: รูปคลื่นคล้ายกันไม่ได้แปลว่าไฟล์มีข้อมูลเหมือนกัน กดดูความคลาดเคลื่อนเพื่อขยายความต่างทางตัวเลข โดยไม่ตีความว่าผู้ฟังจะได้ยินความต่างนั้นเสมอ':'ข้อสังเกต: การเปลี่ยนไฟล์ 16-bit ให้เป็น '+name+' ไม่ทำให้ขั้นหรือข้อมูลที่ปัดหายไปกลับคืน หาก noise ของอุปกรณ์สูงกว่าความต่างนี้ ประโยชน์ที่ได้จริงจะน้อยกว่าแบบจำลอง');
     draw(el('bdrPadded'),left,ideal,limit,errorMode);draw(el('bdrNative'),right,ideal,limit,errorMode);
-    el('bdrPadded').setAttribute('aria-label','16-bit แปลงเป็น 24-bit ที่ '+db+' dBFS มี RMS error '+e16.toExponential(3));
-    el('bdrNative').setAttribute('aria-label','อัด 24-bit ตั้งแต่ต้นที่ '+db+' dBFS มี RMS error '+e24.toExponential(3));
+    el('bdrPadded').setAttribute('aria-label','16-bit แปลงเป็น '+name+' ที่ '+db+' dBFS มี RMS error '+e16.toExponential(3));
+    el('bdrNative').setAttribute('aria-label','อัด '+name+' ตั้งแต่ต้นที่ '+db+' dBFS มี RMS error '+e24.toExponential(3));
   }
   const schedule=()=>{if(!frame)frame=requestAnimationFrame(render);};
-  level.addEventListener('change',schedule);errors.addEventListener('change',schedule);
+  level.addEventListener('change',schedule);errors.addEventListener('change',schedule);format.addEventListener('change',schedule);
   if(window.ResizeObserver)new ResizeObserver(schedule).observe(lab);else window.addEventListener('resize',schedule);
   new MutationObserver(schedule).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
   new MutationObserver(schedule).observe(el('page-basics-bitdepth'),{attributes:true,attributeFilter:['class']});
